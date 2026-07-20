@@ -4,9 +4,8 @@ import { PostsService } from './posts.service';
 @Controller('posts')
 export class PostsController {
 
-  constructor(private readonly postsService: PostsService) {
-
-  }
+  //* PostsService 의존성 주입 -> IOC(Inversion of Control) 컨테이너가 자동 생성해서 주입함.
+  constructor(private readonly postsService: PostsService) { }
 
   //* 1) GET /posts        -> 리스트 조회
   @Get()
