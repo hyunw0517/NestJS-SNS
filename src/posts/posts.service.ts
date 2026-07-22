@@ -51,7 +51,12 @@ export class PostsService {
 
     //* GET
     async getAllPosts(){
-        return this.postsRepository.find();
+        return this.postsRepository.find({
+            // posts 조회 시 유저 정보까지 출력
+            relations: {
+                author: true,
+            },
+        });
         //find(조건부) -> 특정 조건에 맞는 모든 리스트 조회
     }
 
@@ -59,6 +64,9 @@ export class PostsService {
     async getPostById(id: number){
         //await -> 뒤에 if문에서 에러를 잡기 위함 -> post가 promise로 반환되기 때문에
         const post = await this.postsRepository.findOne({
+            relations: {
+                author: true,
+            },
             where: {
                 id: id,
             },
@@ -71,12 +79,14 @@ export class PostsService {
     }
 
     //* POST
-    async createPost(author: string, title: string, content: string){
+    async createPost(authorId: number, title: string, content: string){
         // 1) create 메서드 -> 저장할 객체를 생성한다. 
         // 2) save 메서드 -> 객체를 저장한다. (crteate 메서드에서 생성한 객체로 저장)
 
         const post = this.postsRepository.create({
-           author, 
+           author:{
+            id: authorId,
+           }, 
            title, 
            content,
            likeCount: 0,
@@ -89,7 +99,7 @@ export class PostsService {
     }
 
     //* PUT(:id)
-    async updatePost(postId: number, author?: string, title?: string, content?: string){
+    async updatePost(postId: number, title?: string, content?: string){
         //save의 기능
         //1) 만약 데이터가 존재하지 않는다면 새로 생성한다. 
         //2) 만약 데이터가 존재한다면 해당 데이터를 업데이트 한다. 
@@ -104,12 +114,10 @@ export class PostsService {
             throw new NotFoundException();
         }
 
-        if(author){
-            post.author = author;
-        }
         if(title){
             post.title = title;
         }
+
         if(content){
             post.content = content;
         }
