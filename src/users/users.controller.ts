@@ -7,13 +7,20 @@ export class UsersController {
     
   }
 
-  //* Post /users -> User 추가
-  @Post()
-  postUser(@Body('nickname') nickname: string,
-    @Body('email') email: string,
-    @Body('password') password: string) {
-      return this.usersService.createUser(nickname, email, password);
-  }
+  // //* Post /users -> User 추가
+  // @Post()
+  // postUser(
+  //   @Body('nickname') nickname: string,
+  //   @Body('email') email: string,
+  //   @Body('password') password: string
+  // ) {
+  //   return this.usersService.createUser({
+  //     nickname: nickname,
+  //     email: email,
+  //     password: password,
+  //   });
+  // }
+  //! 회원가입 기능을 auth.module로 대체
 
   //* GET /users -> User 조회
   @Get()

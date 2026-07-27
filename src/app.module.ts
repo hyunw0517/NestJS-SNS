@@ -6,6 +6,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostsModel } from './posts/entities/posts.entity';
 import { UsersModule } from './users/users.module';
 import { UsersModel } from './users/entities/users.entity';
+import { AuthModule } from './auth/auth.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   //imports: 다른 모듈을 불러옴. 
@@ -27,6 +29,8 @@ import { UsersModel } from './users/entities/users.entity';
       ],
       synchronize: true,
     }),
+    AuthModule,
+    CommonModule,
   ], 
   controllers: [AppController],
   providers: [AppService],

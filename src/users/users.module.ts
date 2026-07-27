@@ -10,6 +10,10 @@ import { UsersModel } from './entities/users.entity';
       UsersModel,
     ])
   ],
+  //auth 모듈에서 가져가 사용할 수 있도록 export
+  exports:[
+    UsersService,
+  ], 
   controllers: [UsersController],
   providers: [UsersService],
 })
