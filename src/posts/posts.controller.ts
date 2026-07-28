@@ -1,5 +1,10 @@
-import { Body, Controller, DefaultValuePipe, Delete, Get, NotFoundException, Param, ParseIntPipe, Post, Put } from '@nestjs/common';
+import { Body, ClassSerializerInterceptor, Controller, DefaultValuePipe, Delete, Get, NotFoundException, Param, ParseIntPipe, Patch, Post, Put, Request, UseGuards, UseInterceptors } from '@nestjs/common';
 import { PostsService } from './posts.service';
+import { AccessTokenGuard } from 'src/auth/guard/bearer-token.guard';
+import { UsersModel } from 'src/users/entities/users.entity';
+import { User } from 'src/users/decorator/user.decorator';
+import { CreatePostDto } from './dto/create-post-dto';
+import { UpdatePostDto } from './dto/update-post-dto';
 
 @Controller('posts')
 export class PostsController {
@@ -23,25 +28,33 @@ export class PostsController {
   }
 
   //* 3) POST /posts       -> post 생성
+  // DTO - Data Transfer Object
   @Post()
+  @UseGuards(AccessTokenGuard)
   postPosts(
-    @Body('authorId') authorId: number,
-    @Body('title') title: string,
-    @Body('content') content: string,
+    //@Body('authorId') authorId: number,
+    @User('id') userId: number, // AccessTokenGuard 사용 시, user.decorator.ts
+    //@Body('title') title: string, 
+    //@Body('content') content: string, 
+    @Body() body: CreatePostDto, // DTO 사용
   ){
     return this.postsService.createPost(
-      authorId, title, content
+      //userId, title, content
+      userId, body, 
     );
   }
 
-  //* 4) PUT /posts/:id    -> id에 해당하는 post 변경
-  @Put(':id')
-  putPost( 
+  //* 4) PATCH /posts/:id    -> id에 해당하는 post 변경
+  @Patch(':id')
+  patchPost( 
     @Param('id', ParseIntPipe) id: number, 
-    @Body('title') title?: string,
-    @Body('content') content?: string
+    // @Body('title') title?: string,
+    // @Body('content') content?: string, 
+    @Body() body: UpdatePostDto, 
   ){
-    return this.postsService.updatePost(id, title, content);
+    return this.postsService.updatePost(
+      id, body, 
+    );
   }
 
   //* 5) DELETE /posts/:id -> id에 해당하는 post 삭제

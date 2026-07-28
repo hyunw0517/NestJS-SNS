@@ -4,6 +4,7 @@ import { UsersModel } from 'src/users/entities/users.entity';
 import { HASH_ROUNDS, JWT_SECRET } from './const/auth.const';
 import { UsersService } from 'src/users/users.service';
 import * as bcrypt from 'bcrypt';
+import { RegisterUserDto } from './dto/register-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -83,9 +84,13 @@ export class AuthService {
 
     // 토큰 검증
     verifyToken(token: string){
-        return this.jwtService.verify(token, {
-            secret: JWT_SECRET, 
-        });
+        try{
+            return this.jwtService.verify(token, {
+                secret: JWT_SECRET, 
+            });
+        }catch(e){
+            throw new UnauthorizedException('토큰이 만료되었습니다.');
+        }
     }
 
     rotateToken(token: string, isRefreshToken: boolean){
@@ -156,7 +161,7 @@ export class AuthService {
 
     // loginUser
     //      - 1), 2)에서 필요한 accessToken, refreshToken 반환하는 로직
-    async loginUser(user: Pick<UsersModel, 'email' | 'id'>) {
+    loginUser(user: Pick<UsersModel, 'email' | 'id'>) {
         return {
             accessToken: this.signToken(user, false), 
             refreshToken: this.signToken(user, true), 
@@ -202,7 +207,8 @@ export class AuthService {
     // registerWithEmail
     //      - email, nickname, password 입력 받고 사용자 생성
     //      - 생성 완료되면 accessToken, refreshToken 반환 -> 회원가입 후 바로 로그인 
-    async registerWithEmail(user: Pick<UsersModel, 'email' | 'nickname' | 'password'>){
+    //async registerWithEmail(user: Pick<UsersModel, 'email' | 'nickname' | 'password'>){
+    async registerWithEmail(user: RegisterUserDto){
         const hash = await bcrypt.hash(
             user.password, 
             HASH_ROUNDS, //hash 횟수 -> 길수록 안전함. (저사양 서버 추천 값:10)

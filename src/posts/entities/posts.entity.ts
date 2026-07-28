@@ -1,4 +1,7 @@
+import { IsNotEmpty, IsString } from "class-validator";
 import { BaseModel } from "src/common/entity/base.entity";
+import { notEmptyValidationMessage } from "src/common/validation-message/not-empty-validation.message";
+import { stringValidationMessage } from "src/common/validation-message/string-validation.message";
 import { UsersModel } from "src/users/entities/users.entity";
 import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
@@ -13,9 +16,18 @@ export class PostsModel extends BaseModel {
     author: UsersModel;
 
     @Column()
+    @IsString({
+        message: stringValidationMessage
+    })
+    @IsNotEmpty({
+        message: notEmptyValidationMessage 
+    })
     title: string;
 
     @Column()
+    @IsString({
+        message: stringValidationMessage
+    })
     content: string;
 
     @Column()
