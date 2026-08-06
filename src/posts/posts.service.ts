@@ -1,9 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, LessThan, MoreThan, Repository } from 'typeorm';
 import { PostsModel } from './entities/posts.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CreatePostDto } from './dto/create-post-dto';
-import { UpdatePostDto } from './dto/update-post-dto';
+import { CreatePostDto } from './dto/create-post.dto';
+import { UpdatePostDto } from './dto/update-post.dto';
+import { PaginatePostDto } from './dto/paginate-post.dto';
+import { HOST, PROTOCOL } from 'src/common/const/env.const';
+import { CommonService } from 'src/common/common.service';
 
 // 게시글 작성용 인터페이스
 export interface PostModel {
@@ -48,7 +51,8 @@ export class PostsService {
     constructor(
         //typeORM repository 주입
         @InjectRepository(PostsModel)
-        private readonly postsRepository: Repository<PostsModel>
+        private readonly postsRepository: Repository<PostsModel>, 
+        private readonly commonService: CommonService, 
     ){}
 
     //* GET
@@ -60,6 +64,127 @@ export class PostsService {
             },
         });
         //find(조건부) -> 특정 조건에 맞는 모든 리스트 조회
+    }
+
+    async generatePosts(userId: number){
+        for( let i = 0; i < 100; i++ ){
+            await this.createPost(userId, {
+               title: `임의로 생성된 포스트 제목 ${i}`, 
+               content: `임의로 생성된 포스트 내용 ${i}`, 
+            });
+        }
+    }
+
+    //* GET (Pagination)
+    // 1) 오름차순으로 정렬하는 pagination만 구현
+    async paginatePosts( dto: PaginatePostDto ){
+        // if( dto.page ){
+        //     return this.pagePaginatePosts(dto);
+        // } else {
+        //     return this.cursorPaginatePosts(dto);
+        // }
+
+        return this.commonService.paginate<PostsModel>(
+            dto, 
+            this.postsRepository, 
+            {
+                relations: { 
+                    'author' : true, 
+                }, 
+            }, 
+            'posts', 
+        );
+    }
+
+    async pagePaginatePosts( dto: PaginatePostDto ){
+        /**
+         * data: Data[], 
+         * total: number, 
+         *  
+         */
+        const [posts, count] = await this.postsRepository.findAndCount({
+            skip: dto.take * (dto.page! - 1),
+            order: {
+                createdAt: dto.order__createdAt,
+            },
+            take: dto.take,
+        });
+
+        return {
+            data: posts, 
+            total: count, 
+        }
+    }
+
+    async cursorPaginatePosts( dto: PaginatePostDto ){
+
+        const where : FindOptionsWhere<PostsModel> = {};
+
+        if( dto.where__id__less_than ){
+            where.id = LessThan(dto.where__id__less_than ?? 0);
+        }else if( dto.where__id__more_than ){
+            where.id = MoreThan(dto.where__id__more_than ?? 0);
+        }
+
+        const posts = await this.postsRepository.find({
+            where: where, 
+            order: {
+                createdAt: dto.order__createdAt,
+            },
+            take: dto.take,
+        });
+
+        // 해당되는 포스트가 0개 이상이면 마지막 포스트를 가져오고 아니면 null을 반환한다. 
+        const lastItem = posts.length > 0 && posts.length === dto.take ? posts[posts.length - 1] : null;
+        
+        const nextUrl = lastItem && new URL(`${PROTOCOL}://${HOST}/posts`);
+
+        if( nextUrl ){
+            /**
+             * dto의 키 값들을 루핑하면서
+             * 키 값에 해당되는 value가 존재하면
+             * param에 그대로 붙여넣는다. 
+             * 
+             * 단, where__id__more_than 값만 lastItem의 마지막 값으로 넣어준다. 
+             */
+            for( const key of Object.keys(dto) ){
+                if( dto[key] ){
+                    if( key !== 'where__id__more_than' && key !== 'where__id__less_than' ){
+                        nextUrl.searchParams.append(key, dto[key].toString() );
+                    }
+                }
+            }
+            
+            let key: any = null;
+
+            if( dto.order__createdAt === 'ASC' ){
+                key = 'where__id__more_than';
+            }else{
+                key = 'where__id__less_than';
+            }
+
+            nextUrl.searchParams.append( key, lastItem.id.toString() );
+        }
+
+        /**
+         * Response
+         * 
+         * data: Data[], 
+         * cursor: {
+         *  after: 마지막 Data의 ID
+         * },
+         * count: 응답한 데이터의 갯수
+         * next: 다음 요청 시 사용할 URL 
+         */
+
+        return {
+            data: posts, 
+            cursor: {
+                after: lastItem?.id ?? null, 
+            }, 
+            count: posts.length, 
+            next: nextUrl?.toString() ?? null, 
+        }
     }
 
     //* GET(:id)
