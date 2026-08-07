@@ -1,4 +1,4 @@
-import { Body, ClassSerializerInterceptor, Controller, DefaultValuePipe, Delete, Get, NotFoundException, Param, ParseIntPipe, Patch, Post, Put, Query, Request, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, ClassSerializerInterceptor, Controller, DefaultValuePipe, Delete, Get, NotFoundException, Param, ParseIntPipe, Patch, Post, Put, Query, Request, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { AccessTokenGuard } from 'src/auth/guard/bearer-token.guard';
 import { UsersModel } from 'src/users/entities/users.entity';
@@ -6,6 +6,7 @@ import { User } from 'src/users/decorator/user.decorator';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PaginatePostDto } from './dto/paginate-post.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('posts')
 export class PostsController {
@@ -44,13 +45,18 @@ export class PostsController {
   // DTO - Data Transfer Object
   @Post()
   @UseGuards(AccessTokenGuard)
-  postPosts(
+  async postPosts(
     //@Body('authorId') authorId: number,
     @User('id') userId: number, // AccessTokenGuard 사용 시, user.decorator.ts
     //@Body('title') title: string, 
     //@Body('content') content: string, 
     @Body() body: CreatePostDto, // DTO 사용
   ){
+
+    await this.postsService.createPostImage(
+      body,
+    );
+
     return this.postsService.createPost(
       //userId, title, content
       userId, body, 

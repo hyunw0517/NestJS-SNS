@@ -1,10 +1,11 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersModel } from 'src/users/entities/users.entity';
-import { HASH_ROUNDS, JWT_SECRET } from './const/auth.const';
 import { UsersService } from 'src/users/users.service';
 import * as bcrypt from 'bcrypt';
 import { RegisterUserDto } from './dto/register-user.dto';
+import { ConfigService } from '@nestjs/config';
+import { ENV_HASH_ROUNDS_KEY, ENV_JWT_SECRET } from 'src/common/const/env-keys.const';
 
 @Injectable()
 export class AuthService {
@@ -12,6 +13,7 @@ export class AuthService {
     constructor(
         private readonly jwtService: JwtService, 
         private readonly usersService: UsersService, 
+        private readonly configService: ConfigService, 
     ){}
 
     /**
@@ -86,7 +88,7 @@ export class AuthService {
     verifyToken(token: string){
         try{
             return this.jwtService.verify(token, {
-                secret: JWT_SECRET, 
+                secret: this.configService.get<string>(ENV_JWT_SECRET), 
             });
         }catch(e){
             throw new UnauthorizedException('토큰이 만료되었습니다.');
@@ -95,7 +97,7 @@ export class AuthService {
 
     rotateToken(token: string, isRefreshToken: boolean){
         const decoded = this.jwtService.verify(token, {
-            secret: JWT_SECRET, 
+            secret: this.configService.get<string>(ENV_JWT_SECRET), 
         });
 
         // sub: id, 
@@ -153,7 +155,7 @@ export class AuthService {
         };
 
         return this.jwtService.sign(payload, {
-            secret: JWT_SECRET, 
+            secret: this.configService.get<string>(ENV_JWT_SECRET), 
             // 유효기간 (unit: seconds) 
             expiresIn: isRefreshToken ? 3600 : 300, 
         });
@@ -211,7 +213,7 @@ export class AuthService {
     async registerWithEmail(user: RegisterUserDto){
         const hash = await bcrypt.hash(
             user.password, 
-            HASH_ROUNDS, //hash 횟수 -> 길수록 안전함. (저사양 서버 추천 값:10)
+            parseInt( this.configService.get<string>(ENV_HASH_ROUNDS_KEY) ?? '10' ), //hash 횟수 -> 길수록 안전함. (저사양 서버 추천 값:10)
         );
 
         const newUser = await this.usersService.createUser({

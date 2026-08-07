@@ -1,12 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { FindOptionsWhere, LessThan, MoreThan, Repository } from 'typeorm';
 import { PostsModel } from './entities/posts.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PaginatePostDto } from './dto/paginate-post.dto';
-import { HOST, PROTOCOL } from 'src/common/const/env.const';
 import { CommonService } from 'src/common/common.service';
+import { ConfigService } from '@nestjs/config';
+import { ENV_HOST_KEY, ENV_PROTOCOL_KEY } from 'src/common/const/env-keys.const';
+import { POST_IMAGE_PATH, PUBLIC_FOLDER_PATH, TEMP_FOLDER_PATH } from 'src/common/const/path.const';
+import { basename, join } from 'path';
+import { promises } from 'fs';
 
 // 게시글 작성용 인터페이스
 export interface PostModel {
@@ -53,6 +57,7 @@ export class PostsService {
         @InjectRepository(PostsModel)
         private readonly postsRepository: Repository<PostsModel>, 
         private readonly commonService: CommonService, 
+        private readonly configService: ConfigService, 
     ){}
 
     //* GET
@@ -137,7 +142,10 @@ export class PostsService {
         // 해당되는 포스트가 0개 이상이면 마지막 포스트를 가져오고 아니면 null을 반환한다. 
         const lastItem = posts.length > 0 && posts.length === dto.take ? posts[posts.length - 1] : null;
         
-        const nextUrl = lastItem && new URL(`${PROTOCOL}://${HOST}/posts`);
+        const protocol = this.configService.get<string>(ENV_PROTOCOL_KEY);
+        const host = this.configService.get<string>(ENV_HOST_KEY);
+
+        const nextUrl = lastItem && new URL(`${protocol}://${host}/posts`);
 
         if( nextUrl ){
             /**
@@ -205,9 +213,42 @@ export class PostsService {
         return post;
     }
 
+    async createPostImage(dto: CreatePostDto){
+
+        if( !dto.image ){
+            throw new BadRequestException( "이미지가 없습니다." );
+        }
+
+        // dto의 이미지 이름을 기반으로 파일의 경로 생성
+        const tempFilePath = join(
+            TEMP_FOLDER_PATH,
+            dto.image,
+        );
+
+        try{
+            //파일이 존재하는지 확인 -> 존재하지 않으면 에러
+            await promises.access(tempFilePath);
+        }catch(e){
+            throw new BadRequestException( "존재하지 않는 파일입니다." );
+        }
+
+        //파일의 이름만 가져오기
+        const fileName = basename( tempFilePath );
+
+        // 새로 이동할 포스트 폴더의 경로 + 이미지 파일명
+        const newPath = join(
+            POST_IMAGE_PATH, 
+            fileName, 
+        ); 
+
+        await promises.rename( tempFilePath, newPath );
+
+        return true; 
+    }
+
     //* POST
     //async createPost(authorId: number, title: string, content: string){
-    async createPost(authorId: number, postDto: CreatePostDto){
+    async createPost(authorId: number, postDto: CreatePostDto ){
         // 1) create 메서드 -> 저장할 객체를 생성한다. 
         // 2) save 메서드 -> 객체를 저장한다. (crteate 메서드에서 생성한 객체로 저장)
 
