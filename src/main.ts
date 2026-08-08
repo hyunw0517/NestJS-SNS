@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { HttpExceptionFilter } from './common/exception-filter/http.exception-filter';
 
 //NestJS를 실행하는 함수
 async function bootstrap() {
@@ -17,6 +18,8 @@ async function bootstrap() {
   }) ); 
   // ValidationPipe() -> 각 라우트마다 개별적으로 등록하지 않아도, 
   // DTO에 정의한 class-validator 규칙이 앱 전체 요청에 일괄 적용됨
+
+  //app.useGlobalFilters(new HttpExceptionFilter()); //HttpExceptionFilter 전체화
 
   await app.listen(process.env.PORT ?? 3000);
 }

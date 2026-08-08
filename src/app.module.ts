@@ -1,4 +1,4 @@
-import { ClassSerializerInterceptor, Module } from '@nestjs/common';
+import { ClassSerializerInterceptor, MiddlewareConsumer, Module, NestMiddleware, NestModule, RequestMethod } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PostsModule } from './posts/posts.module';
@@ -14,6 +14,7 @@ import { ENV_DB_DATABASE_KEY, ENV_DB_HOST_KEY, ENV_DB_PASSWORD_KEY, ENV_DB_PORT_
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { PUBLIC_FOLDER_PATH } from './common/const/path.const';
 import { ImageModel } from './common/entity/image.entity';
+import { LogMiddleware } from './common/middleware/log.middleware';
 
 @Module({
   //imports: 다른 모듈을 불러옴. 
@@ -54,5 +55,14 @@ import { ImageModel } from './common/entity/image.entity';
     useClass: ClassSerializerInterceptor, 
   }],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer){
+    consumer.apply(
+      LogMiddleware,
+    ).forRoutes ({
+      path: '*path',
+      method: RequestMethod.ALL,
+    });
+  }
+}
 
