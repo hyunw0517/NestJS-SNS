@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { FindOptionsWhere, LessThan, MoreThan, Repository } from 'typeorm';
+import { FindOptionsWhere, LessThan, MoreThan, QueryRunner, Repository } from 'typeorm';
 import { PostsModel } from './entities/posts.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -11,43 +11,10 @@ import { ENV_HOST_KEY, ENV_PROTOCOL_KEY } from 'src/common/const/env-keys.const'
 import { POST_IMAGE_PATH, PUBLIC_FOLDER_PATH, TEMP_FOLDER_PATH } from 'src/common/const/path.const';
 import { basename, join } from 'path';
 import { promises } from 'fs';
+import { CreatePostImageDto } from './image/dto/create-image.dto';
+import { ImageModel } from 'src/common/entity/image.entity';
+import { DEFAULT_POST_FIND_OPTIONS } from './const/default-post-find-options.const';
 
-// 게시글 작성용 인터페이스
-export interface PostModel {
-  id: number;
-  author: string;
-  title: string;
-  content: string;
-  likeCount: number;
-  commentCount: number;
-}
-
-/*let posts : PostModel[] = [
-  {
-    id: 1,
-    author: 'newyork_official',
-    title: '스파이더맨',
-    content: '모두의 친구 스파이더맨',
-    likeCount: 1000000,
-    commentCount: 10000
-  },
-  {
-    id: 2,
-    author: 'stark_official',
-    title: '아이언맨',
-    content: '사람을 구하는 아이언맨',
-    likeCount: 1000000,
-    commentCount: 10000
-  },
-  {
-    id: 3,
-    author: 'usa_official',
-    title: '캡틴아메리카',
-    content: '미국을 상징하는 캡틴아메리카',
-    likeCount: 1000000,
-    commentCount: 10000
-  }
-];*/
 
 
 @Injectable()
@@ -56,6 +23,8 @@ export class PostsService {
         //typeORM repository 주입
         @InjectRepository(PostsModel)
         private readonly postsRepository: Repository<PostsModel>, 
+        @InjectRepository(ImageModel)
+        private readonly imageRopository: Repository<ImageModel>,
         private readonly commonService: CommonService, 
         private readonly configService: ConfigService, 
     ){}
@@ -63,10 +32,7 @@ export class PostsService {
     //* GET
     async getAllPosts(){
         return this.postsRepository.find({
-            // posts 조회 시 유저 정보까지 출력
-            relations: {
-                author: true,
-            },
+            ...DEFAULT_POST_FIND_OPTIONS,
         });
         //find(조건부) -> 특정 조건에 맞는 모든 리스트 조회
     }
@@ -76,6 +42,7 @@ export class PostsService {
             await this.createPost(userId, {
                title: `임의로 생성된 포스트 제목 ${i}`, 
                content: `임의로 생성된 포스트 내용 ${i}`, 
+               images: [], 
             });
         }
     }
@@ -93,9 +60,7 @@ export class PostsService {
             dto, 
             this.postsRepository, 
             {
-                relations: { 
-                    'author' : true, 
-                }, 
+                ...DEFAULT_POST_FIND_OPTIONS,
             }, 
             'posts', 
         );
@@ -199,9 +164,7 @@ export class PostsService {
     async getPostById(id: number){
         //await -> 뒤에 if문에서 에러를 잡기 위함 -> post가 promise로 반환되기 때문에
         const post = await this.postsRepository.findOne({
-            relations: {
-                author: true,
-            },
+            ...DEFAULT_POST_FIND_OPTIONS,
             where: {
                 id: id,
             },
@@ -213,16 +176,16 @@ export class PostsService {
         return post;
     }
 
-    async createPostImage(dto: CreatePostDto){
+    async createPostImage(dto: CreatePostImageDto){
 
-        if( !dto.image ){
+        if( !dto.path ){
             throw new BadRequestException( "이미지가 없습니다." );
         }
 
         // dto의 이미지 이름을 기반으로 파일의 경로 생성
         const tempFilePath = join(
             TEMP_FOLDER_PATH,
-            dto.image,
+            dto.path,
         );
 
         try{
@@ -241,29 +204,41 @@ export class PostsService {
             fileName, 
         ); 
 
+        // 트랜잭션 save
+        const result = await this.imageRopository.save({
+            ...dto,  
+        });
+
+        // 파일 옮기기
         await promises.rename( tempFilePath, newPath );
 
-        return true; 
+        return result; 
+    }
+
+    getRepository(qr?: QueryRunner){
+        return qr ? qr.manager.getRepository<PostsModel>(PostsModel) : this.postsRepository;
     }
 
     //* POST
     //async createPost(authorId: number, title: string, content: string){
-    async createPost(authorId: number, postDto: CreatePostDto ){
+    async createPost(authorId: number, postDto: CreatePostDto, qr?: QueryRunner ){
         // 1) create 메서드 -> 저장할 객체를 생성한다. 
         // 2) save 메서드 -> 객체를 저장한다. (crteate 메서드에서 생성한 객체로 저장)
+        const repository = this.getRepository(qr);
 
-        const post = this.postsRepository.create({
+        const post = repository.create({
            author:{
             id: authorId,
            }, 
            //title, 
            //content,
            ...postDto, 
+           images: [],
            likeCount: 0,
            commentCount: 0,
         });
     
-        const newPost = await this.postsRepository.save(post);
+        const newPost = await repository.save(post);
         
         return newPost;
     }

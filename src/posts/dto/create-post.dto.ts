@@ -23,8 +23,10 @@ export class CreatePostDto extends PickType( PostsModel, ['title', 'content'] ) 
 //   })*/
 //   content: string;
 
-    @IsString()
+    @IsString({
+        each: true, //리스트라는 뜻이며, string으로 검증
+    })
     @IsOptional()
-    image?: string;
+    images: string[] = [];
 
 }
