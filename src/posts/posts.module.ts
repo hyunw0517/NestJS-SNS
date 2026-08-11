@@ -2,7 +2,7 @@ import { BadRequestException, MiddlewareConsumer, Module, NestModule, RequestMet
 import { PostsService } from './posts.service';
 import { PostsController } from './posts.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { PostsModel } from './entities/posts.entity';
+import { PostsModel } from './entity/posts.entity';
 import { AuthModule } from 'src/auth/auth.module';
 import { UsersModule } from 'src/users/users.module';
 import { CommonModule } from 'src/common/common.module';
@@ -29,6 +29,7 @@ import { LogMiddleware } from 'src/common/middleware/log.middleware';
   ],
   controllers: [PostsController],
   providers: [PostsService, PostsImagesService],
+  exports: [PostsService],
 })
 export class PostsModule {
 }

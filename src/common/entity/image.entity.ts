@@ -4,7 +4,7 @@ import { Column, Entity, ManyToOne } from "typeorm";
 import { Transform } from "class-transformer";
 import { join } from "path";
 import { POST_IMAGE_PATH, POST_PUBLIC_IMAGE_PATH } from "../const/path.const";
-import { PostsModel } from "src/posts/entities/posts.entity";
+import { PostsModel } from "src/posts/entity/posts.entity";
 
 export enum ImageModelType{
     POST_IMAGE,
@@ -43,6 +43,8 @@ export class ImageModel extends BaseModel {
     })
     path: string;
 
-    @ManyToOne((type) => PostsModel, (post) => post.images )
+    @ManyToOne((type) => PostsModel, (post) => post.images, {
+        onDelete: 'CASCADE', 
+    } )
     post?: PostsModel;
 }

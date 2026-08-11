@@ -1,7 +1,7 @@
 import { BadRequestException, Body, ClassSerializerInterceptor, Controller, DefaultValuePipe, Delete, Get, InternalServerErrorException, NotFoundException, Param, ParseIntPipe, Patch, Post, Put, Query, Request, UploadedFile, UseFilters, UseGuards, UseInterceptors } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { AccessTokenGuard } from 'src/auth/guard/bearer-token.guard';
-import { UsersModel } from 'src/users/entities/users.entity';
+import { UsersModel } from 'src/users/entity/users.entity';
 import { User } from 'src/users/decorator/user.decorator';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -15,6 +15,9 @@ import { LogInterceptor } from 'src/common/interceptor/log.interceptor';
 import { TransactionInterceptor } from 'src/common/interceptor/transaction.interceptor';
 import { QueryRunner } from 'src/common/decorator/query-runner.decorator';
 import { HttpExceptionFilter } from 'src/common/exception-filter/http.exception-filter';
+import { Roles } from 'src/users/decorator/roles.decorator';
+import { RolesEnum } from 'src/users/const/roles.const';
+import { IsPublic } from 'src/common/decorator/is-public.decorator';
 
 @Controller('posts')
 export class PostsController {
@@ -30,6 +33,7 @@ export class PostsController {
   @Get()
   //@UseInterceptors(LogInterceptor) //Interceptor 적용
   //@UseFilters(HttpExceptionFilter) //HttpExceptionFilter 적용 
+  @IsPublic()
   getPosts(
     @Query() query: PaginatePostDto,
   ){
@@ -41,7 +45,6 @@ export class PostsController {
 
   // POST /posts/random 
   @Post('random')
-  @UseGuards(AccessTokenGuard)
   async postPostsRandom( @User() user: UsersModel ){
     await this.postsService.generatePosts(user.id);
     
@@ -52,6 +55,7 @@ export class PostsController {
   @Get(':id')
   //getPost(@Param('id') id: string){ 
     //별도 작업을 안하는 이상 파라미터는 string이 기본값. 
+  @IsPublic()
   getPost(@Param('id', ParseIntPipe) id: number){ 
     //ParseIntPipe로 값 검증 가능
     return this.postsService.getPostById(id);
@@ -73,7 +77,6 @@ export class PostsController {
   // commit -> 저장
   // rollback -> 원상복구
   @Post()
-  @UseGuards(AccessTokenGuard)
   @UseInterceptors(TransactionInterceptor)
   async postPosts(
     //@Body('authorId') authorId: number,
@@ -157,10 +160,13 @@ export class PostsController {
 
   //* 5) DELETE /posts/:id -> id에 해당하는 post 삭제
   @Delete(':id')
+  @Roles(RolesEnum.ADMIN)
   deletePost(
     @Param('id', ParseIntPipe) id: number
   ){
     return this.postsService.deletePost(id);
   }
+
+  // RBAC -> Role Based Access Control
 
 }

@@ -1,5 +1,5 @@
 import { createParamDecorator, ExecutionContext, InternalServerErrorException } from "@nestjs/common";
-import { PostsModel } from "src/posts/entities/posts.entity";
+import { PostsModel } from "src/posts/entity/posts.entity";
 
 export const QueryRunner = createParamDecorator((data, context: ExecutionContext) => {
     const req = context.switchToHttp().getRequest();
