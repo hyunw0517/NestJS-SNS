@@ -182,6 +182,22 @@ export class PostsService {
         return qr ? qr.manager.getRepository<PostsModel>(PostsModel) : this.postsRepository;
     }
 
+    async incrementCommentCount(postId: number, qr?: QueryRunner){
+        const repository = this.getRepository(qr);
+
+        await repository.increment({
+            id: postId,
+        }, 'commentCount', 1);
+    }
+
+    async decrementCommentCount(postId: number, qr?: QueryRunner){
+        const repository = this.getRepository(qr);
+
+        await repository.decrement({
+            id: postId,
+        }, 'commentCount', 1);
+    }
+
     //* POST
     //async createPost(authorId: number, title: string, content: string){
     async createPost(authorId: number, postDto: CreatePostDto, qr?: QueryRunner ){
@@ -262,6 +278,20 @@ export class PostsService {
                 id, 
             },
         })
+    }
+
+    async isPostMine(userId: number, postId: number){
+        return this.postsRepository.exists({
+            where:{
+                id:postId,
+                author:{
+                    id: userId,
+                }
+            }, 
+            relations:{
+                author: true, 
+            }
+        });
     }
 
 }

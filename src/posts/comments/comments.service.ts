@@ -3,7 +3,7 @@ import { CommonService } from 'src/common/common.service';
 import { PaginateCommentsDto } from './dto/paginate-comments.dto';
 import { CommentsModel } from './entity/comments.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryRunner, Repository } from 'typeorm';
 import { UsersModel } from 'src/users/entity/users.entity';
 import { CreateCommentsDto } from './dto/create-comments.dto';
 import { DEFAULT_COMMENT_FIND_OPTIONS } from './const/default-comment-find-options.const';
@@ -16,6 +16,10 @@ export class CommentsService {
         private readonly commentsRepository: Repository<CommentsModel>,
         private readonly commonService: CommonService, 
     ){}
+
+    getRepository(qr?: QueryRunner){
+        return qr ? qr.manager.getRepository<CommentsModel>(CommentsModel) : this.commentsRepository;
+    }
 
     paginateComments(
         dto: PaginateCommentsDto, 
@@ -55,14 +59,19 @@ export class CommentsService {
         dto: CreateCommentsDto, 
         postId: number, 
         author: UsersModel, 
+        qr?: QueryRunner,
     ){
-        return this.commentsRepository.save({
+        const repository = this.getRepository(qr);
+
+        const newComment = await repository.save({
             ...dto,
             post:{
                 id: postId,
             },
             author, 
         });
+
+        return newComment;
     }
 
     async updateComment(
@@ -99,8 +108,11 @@ export class CommentsService {
 
     async deleteComment(
         commentId: number, 
+        qr?: QueryRunner, 
     ){
-        const comment = await this.commentsRepository.findOne({
+        const repository = this.getRepository(qr);
+
+        const comment = await repository.findOne({
             where:{
                 id: commentId,
             }
@@ -110,6 +122,22 @@ export class CommentsService {
             throw new BadRequestException(`id: ${commentId} Comment는 존재하지 않습니다.`);
         }
 
-        return this.commentsRepository.delete(commentId);
+        await repository.delete(commentId);
+
+        return commentId; 
+    }
+
+    async isCommentMine(userId: number, commentId: number){
+        return this.commentsRepository.exists({
+            where:{
+                id: commentId,
+                author:{
+                    id: userId,
+                }
+            }, 
+            relations:{
+                author: true, 
+            }
+        });
     }
 }

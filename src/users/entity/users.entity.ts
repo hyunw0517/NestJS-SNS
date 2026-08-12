@@ -10,6 +10,7 @@ import { Exclude, Expose } from "class-transformer";
 import { ChatsModel } from "src/chats/entity/chats.entity";
 import { MessagesModel } from "src/chats/messages/entity/messages.entity";
 import { CommentsModel } from "src/posts/comments/entity/comments.entity";
+import { UserFollowsModel } from "./user-followers.entity";
 
 /**
  * id: number 
@@ -96,7 +97,7 @@ export class UsersModel extends BaseModel{
     @OneToMany( () => PostsModel, (post) => post.author )
     posts: PostsModel[];
 
-    @ManyToMany(() => ChatsModel, (chat) => chat.users )
+    @ManyToMany( () => ChatsModel, (chat) => chat.users )
     @JoinTable() 
     chats: ChatsModel[];
 
@@ -105,4 +106,22 @@ export class UsersModel extends BaseModel{
 
     @OneToMany( () => CommentsModel, (comment) => comment.author )
     postComments: CommentsModel[];
+
+    // 내가 팔로우 하는 사람들
+    @OneToMany(() => UserFollowsModel, (ufm) => ufm.follower)
+    followers: UserFollowsModel[];
+
+    // 나를 팔로우 하는 사람들
+    @OneToMany(() => UserFollowsModel, (ufm) => ufm.followee)
+    followees: UserFollowsModel[];
+
+    @Column({
+        default: 0,
+    })
+    followerCount: number;
+
+    @Column({
+        default: 0,
+    })
+    followeeCount: number;
 }
