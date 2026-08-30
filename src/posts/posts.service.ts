@@ -50,12 +50,6 @@ export class PostsService {
     //* GET (Pagination)
     // 1) 오름차순으로 정렬하는 pagination만 구현
     async paginatePosts( dto: PaginatePostDto ){
-        // if( dto.page ){
-        //     return this.pagePaginatePosts(dto);
-        // } else {
-        //     return this.cursorPaginatePosts(dto);
-        // }
-
         return this.commonService.paginate<PostsModel>(
             dto, 
             this.postsRepository, 
@@ -66,12 +60,8 @@ export class PostsService {
         );
     }
 
+    /*
     async pagePaginatePosts( dto: PaginatePostDto ){
-        /**
-         * data: Data[], 
-         * total: number, 
-         *  
-         */
         const [posts, count] = await this.postsRepository.findAndCount({
             skip: dto.take * (dto.page! - 1),
             order: {
@@ -113,13 +103,6 @@ export class PostsService {
         const nextUrl = lastItem && new URL(`${protocol}://${host}/posts`);
 
         if( nextUrl ){
-            /**
-             * dto의 키 값들을 루핑하면서
-             * 키 값에 해당되는 value가 존재하면
-             * param에 그대로 붙여넣는다. 
-             * 
-             * 단, where__id__more_than 값만 lastItem의 마지막 값으로 넣어준다. 
-             */
             for( const key of Object.keys(dto) ){
                 if( dto[key] ){
                     if( key !== 'where__id__more_than' && key !== 'where__id__less_than' ){
@@ -139,17 +122,6 @@ export class PostsService {
             nextUrl.searchParams.append( key, lastItem.id.toString() );
         }
 
-        /**
-         * Response
-         * 
-         * data: Data[], 
-         * cursor: {
-         *  after: 마지막 Data의 ID
-         * },
-         * count: 응답한 데이터의 갯수
-         * next: 다음 요청 시 사용할 URL 
-         */
-
         return {
             data: posts, 
             cursor: {
@@ -159,6 +131,7 @@ export class PostsService {
             next: nextUrl?.toString() ?? null, 
         }
     }
+    */
 
     //* GET(:id)
     async getPostById(id: number, qr?: QueryRunner){
@@ -223,15 +196,16 @@ export class PostsService {
     }
 
     //* PUT(:id)
-    async updatePost(postId: number, postDto: UpdatePostDto){
+    async updatePost(postId: number, postDto: UpdatePostDto, qr?: QueryRunner){
+        const repository = this.getRepository(qr);
 
         const { title, content } = postDto;
 
         //save의 기능
-        //1) 만약 데이터가 존재하지 않는다면 새로 생성한다. 
-        //2) 만약 데이터가 존재한다면 해당 데이터를 업데이트 한다. 
+        //1) 만약 데이터가 존재하지 않는다면 새로 생성한다.
+        //2) 만약 데이터가 존재한다면 해당 데이터를 업데이트 한다.
 
-        const post = await this.postsRepository.findOne({
+        const post = await repository.findOne({
             where: {
                 id: postId,
             },
@@ -249,7 +223,7 @@ export class PostsService {
             post.content = content;
         }
 
-        const newPost = await this.postsRepository.save(post);
+        const newPost = await repository.save(post);
 
         return newPost;
 

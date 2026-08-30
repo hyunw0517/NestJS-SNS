@@ -5,8 +5,8 @@ services:
     volumes: 
       - ./postgres-data:/var/lib/postgresql/data #{현재 위치}/{이미지 위치}
     ports:
-      - "5432:5432" #포트 연동 {호스트 포트}:{이미지 포트} - 5432: PostgreSQL 기본 포트
+      - "${DB_PORT}:5432" #포트 연동 {호스트 포트}:{이미지 포트} - 5432: PostgreSQL 기본 포트
     environment:
-      POSTGRES_USER: postgres       #사용자 이름 정의
-      POSTGRES_PASSWORD: postgres   #사용자 비밀번호
-      POSTGRES_DB: postgres         #기본으로 사용할 데이터베이스 이름
+      POSTGRES_USER: ${DB_USERNAME}       #사용자 이름 정의
+      POSTGRES_PASSWORD: ${DB_PASSWORD}   #사용자 비밀번호
+      POSTGRES_DB: ${DB_NAME}         #기본으로 사용할 데이터베이스 이름

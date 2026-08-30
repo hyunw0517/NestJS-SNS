@@ -38,9 +38,6 @@ export class PostsController {
   getPosts(
     @Query() query: PaginatePostDto,
   ){
-    //throw new BadRequestException('에러 테스트');
-
-    //return this.postsService.getAllPosts();
     return this.postsService.paginatePosts(query);
   }
 
@@ -149,15 +146,31 @@ export class PostsController {
   //* 4) PATCH /posts/:id    -> id에 해당하는 post 변경
   @Patch(':postId')
   @UseGuards(IsPostMineOrAdminGuard)
-  patchPost( 
-    @Param('postId', ParseIntPipe) id: number, 
-    @Body() body: UpdatePostDto, 
-    // @Body('title') title?: string,
-    // @Body('content') content?: string, 
+  @UseInterceptors(TransactionInterceptor)
+  async patchPost(
+    @Param('postId', ParseIntPipe) id: number,
+    @Body() body: UpdatePostDto,
+    @QueryRunner() qr: QR,
   ){
-    return this.postsService.updatePost(
-      id, body, 
+    const post = await this.postsService.updatePost(
+      id, body, qr,
     );
+
+    // images가 body에 존재하면 기존 이미지를 모두 지우고 새 목록으로 교체한다.
+    if(body.images){
+      await this.postImagesService.deletePostImages(id, qr);
+
+      for(let i = 0; i < body.images.length; i++){
+        await this.postImagesService.createPostImage({
+          post,
+          order: i,
+          path: body.images[i],
+          type: ImageModelType.POST_IMAGE,
+        }, qr);
+      }
+    }
+
+    return this.postsService.getPostById(id, qr);
   }
 
   //* 5) DELETE /posts/:id -> id에 해당하는 post 삭제
