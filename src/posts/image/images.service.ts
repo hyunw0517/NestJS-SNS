@@ -59,6 +59,30 @@ export class PostsImagesService{
         // 파일 옮기기
         await promises.rename( tempFilePath, newPath );
 
-        return result; 
+        return result;
+    }
+
+    async deletePostImages( postId: number, qr?: QueryRunner ){
+        const repository = this.getRepository(qr);
+
+        const images = await repository.find({
+            where: {
+                post: {
+                    id: postId,
+                },
+            },
+        });
+
+        for( const image of images ){
+            const filePath = join( POST_IMAGE_PATH, image.path );
+
+            try{
+                await promises.unlink(filePath);
+            }catch{
+                // 파일이 이미 존재하지 않는 경우 무시
+            }
+        }
+
+        await repository.remove(images);
     }
 }
