@@ -6,7 +6,9 @@ import { UsersModule } from 'src/users/users.module';
 
 @Module({
   imports: [
-    JwtModule.register({}),
+    JwtModule.register({
+      //secret: process.env.JWT_SECRET, //service에 직접 넣는 방식 사용
+    }),
     UsersModule,
   ],
   exports:[

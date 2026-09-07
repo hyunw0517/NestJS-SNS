@@ -9,7 +9,7 @@ async function bootstrap() {
 
   //전역 파이프 
   app.useGlobalPipes( new ValidationPipe({
-    transform: true, // 요청 파라미터를 DTO에 정의한 타입으로 변환
+    transform: true, // 요청 파라미터가 비어있다면 DTO에 정의한 값으로 변환(디폴트값 허용)
     transformOptions: {
       enableImplicitConversion: true, // DTO에 정의한 타입으로 변환 시, 암묵적 형변환 허용
     }, 

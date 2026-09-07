@@ -2,7 +2,7 @@ services:
   postgres:
     image: postgres:17 #{사용할 이미지}:{버전}
     restart: always #상시 재시작
-    volumes: 
+    volumes:
       - ./postgres-data:/var/lib/postgresql/data #{현재 위치}/{이미지 위치}
     ports:
       - "${DB_PORT}:5432" #포트 연동 {호스트 포트}:{이미지 포트} - 5432: PostgreSQL 기본 포트
