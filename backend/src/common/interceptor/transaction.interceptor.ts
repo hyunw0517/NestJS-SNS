@@ -1,4 +1,4 @@
-import { CallHandler, ExecutionContext, Injectable, InternalServerErrorException, NestInterceptor } from "@nestjs/common";
+import { CallHandler, ExecutionContext, HttpException, Injectable, InternalServerErrorException, NestInterceptor } from "@nestjs/common";
 import { catchError, Observable, tap } from "rxjs";
 import { DataSource } from "typeorm";
 
@@ -28,6 +28,12 @@ export class TransactionInterceptor implements NestInterceptor {
                     async (e)=>{
                         await qr.rollbackTransaction();
                         await qr.release();
+
+                        // ValidationPipe 등에서 던진 HttpException(예: 400)은 원래 상태 코드를 유지하고,
+                        // 그 외의 예상치 못한 오류만 500으로 감싼다.
+                        if( e instanceof HttpException ){
+                            throw e;
+                        }
 
                         throw new InternalServerErrorException(e.message);
                     }

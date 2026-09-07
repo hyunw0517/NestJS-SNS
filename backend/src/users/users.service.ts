@@ -24,18 +24,8 @@ export class UsersService {
 
     //async createUser( nickname: string, email: string, password: string ){
     async createUser( user: Pick<UsersModel, 'nickname' | 'email' | 'password'> ){
-        // 1) nickname 중복 여부 확인 
+        // nickname은 표시 이름(display name)이므로 중복을 허용하며 별도 검사를 하지 않는다.
         // exist() -> 만약 조건에 해당하는 값이 있으면 true 반환
-        const nicknameExists = await this.usersRepository.exists({
-            where:{
-                nickname: user.nickname, 
-            }
-        });
-
-        if( nicknameExists ){
-            throw new BadRequestException('이미 존재하는 닉네임입니다.');
-        }
-
         const emailExists = await this.usersRepository.exists({
             where:{
                 email: user.email,

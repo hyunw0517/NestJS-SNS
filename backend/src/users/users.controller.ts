@@ -29,6 +29,12 @@ export class UsersController {
   // }
   //! 회원가입 기능을 auth.module로 대체
 
+  //* GET /users/me -> 현재 로그인한 사용자 조회
+  @Get('me')
+  getMe(@User() user: UsersModel) {
+    return user;
+  }
+
   //* GET /users -> User 조회
   @Get()
   @Roles(RolesEnum.ADMIN)

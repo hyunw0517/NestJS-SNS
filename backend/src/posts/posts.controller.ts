@@ -15,8 +15,6 @@ import { LogInterceptor } from 'src/common/interceptor/log.interceptor';
 import { TransactionInterceptor } from 'src/common/interceptor/transaction.interceptor';
 import { QueryRunner } from 'src/common/decorator/query-runner.decorator';
 import { HttpExceptionFilter } from 'src/common/exception-filter/http.exception-filter';
-import { Roles } from 'src/users/decorator/roles.decorator';
-import { RolesEnum } from 'src/users/const/roles.const';
 import { IsPublic } from 'src/common/decorator/is-public.decorator';
 import { IsPostMineOrAdminGuard } from './guard/is-post-mine-or-admin.guard';
 
@@ -173,13 +171,13 @@ export class PostsController {
     return this.postsService.getPostById(id, qr);
   }
 
-  //* 5) DELETE /posts/:id -> id에 해당하는 post 삭제
-  @Delete(':id')
-  @Roles(RolesEnum.ADMIN)
+  //* 5) DELETE /posts/:postId -> postId에 해당하는 post 삭제
+  @Delete(':postId')
+  @UseGuards(IsPostMineOrAdminGuard)
   deletePost(
-    @Param('id', ParseIntPipe) id: number
+    @Param('postId', ParseIntPipe) postId: number
   ){
-    return this.postsService.deletePost(id);
+    return this.postsService.deletePost(postId);
   }
 
   // RBAC -> Role Based Access Control

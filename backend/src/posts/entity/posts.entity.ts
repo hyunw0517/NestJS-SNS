@@ -1,10 +1,9 @@
 import { Transform } from "class-transformer";
-import { IsNotEmpty, IsString } from "class-validator";
+import { IsOptional, IsString } from "class-validator";
 import { join } from "node:path";
 import { POST_PUBLIC_IMAGE_PATH } from "src/common/const/path.const";
 import { BaseModel } from "src/common/entity/base.entity";
 import { ImageModel, ImageModelType } from "src/common/entity/image.entity";
-import { notEmptyValidationMessage } from "src/common/validation-message/not-empty-validation.message";
 import { stringValidationMessage } from "src/common/validation-message/string-validation.message";
 import { UsersModel } from "src/users/entity/users.entity";
 import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
@@ -20,14 +19,15 @@ export class PostsModel extends BaseModel {
     })
     author: UsersModel;
 
-    @Column()
+    // X(Twitter) 스타일 SNS 구조에서는 content 중심이라 title은 선택 입력으로 완화
+    @Column({
+        nullable: true,
+    })
     @IsString({
         message: stringValidationMessage
     })
-    @IsNotEmpty({
-        message: notEmptyValidationMessage 
-    })
-    title: string;
+    @IsOptional()
+    title?: string;
 
     @Column()
     @IsString({

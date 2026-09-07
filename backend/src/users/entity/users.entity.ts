@@ -2,7 +2,7 @@ import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, OneToMany, Pri
 import { RolesEnum } from "../const/roles.const";
 import { PostsModel } from "src/posts/entity/posts.entity";
 import { BaseModel } from "src/common/entity/base.entity";
-import { IsEmail, IsNotEmpty, IsString, Length, ValidationArguments } from "class-validator";
+import { IsEmail, IsNotEmpty, IsOptional, IsString, Length, ValidationArguments } from "class-validator";
 import { lengthValidationMessage } from "src/common/validation-message/length-validation.message";
 import { stringValidationMessage } from "src/common/validation-message/string-validation.message";
 import { emailValidationMessage } from "src/common/validation-message/email-validation.message";
@@ -27,16 +27,14 @@ export class UsersModel extends BaseModel{
 
     @Column({
         // 1) 길이
-        length: 20, 
-        // 2) 유일값 
-        unique: true,
+        length: 20,
     })
     @IsString()
     @Length( 1, 20, {
         message: lengthValidationMessage,
     } )
-    // 1) 길이가 20을 넘지 않을 것 
-    // 2) 유일값이 될 것 
+    // 1) 길이가 20을 넘지 않을 것
+    // 표시 이름(display name) 역할이므로 중복 허용
     //@Expose()
     nickname: string;
 
@@ -124,4 +122,50 @@ export class UsersModel extends BaseModel{
         default: 0,
     })
     followeeCount: number;
+
+    // SNS @handle 용도. 기존 데이터와 synchronize 환경을 고려하여 nullable로 시작.
+    @Column({
+        length: 30,
+        unique: true,
+        nullable: true,
+    })
+    @IsString({
+        message: stringValidationMessage
+    })
+    @Length( 1, 30, {
+        message: lengthValidationMessage,
+    } )
+    @IsOptional()
+    handle?: string;
+
+    @Column({
+        nullable: true,
+    })
+    @IsString({
+        message: stringValidationMessage
+    })
+    @IsOptional()
+    profileImage?: string;
+
+    @Column({
+        nullable: true,
+    })
+    @IsString({
+        message: stringValidationMessage
+    })
+    @IsOptional()
+    coverImage?: string;
+
+    @Column({
+        type: 'text',
+        nullable: true,
+    })
+    @IsString({
+        message: stringValidationMessage
+    })
+    @Length( 0, 200, {
+        message: lengthValidationMessage,
+    } )
+    @IsOptional()
+    bio?: string;
 }
