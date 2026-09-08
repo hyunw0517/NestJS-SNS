@@ -43,6 +43,35 @@ export function toProfileHeaderUser(apiUser: ApiUserProfile): User {
   }
 }
 
+// PATCH /users/me 요청 body. Backend PatchUserDto와 동일한 계약:
+// - nickname: 항상 값을 보낸다(필수 필드라 제거 개념이 없음)
+// - handle/bio: undefined면 이 요청에서 다루지 않는다는 뜻이 아니라(Edit Profile은
+//   텍스트 필드를 항상 함께 저장하므로) null이면 제거, 값이 있으면 그 값으로 저장
+// - profileImage/coverImage: 생략(키 자체가 없음)이면 기존 이미지 유지, null이면 제거,
+//   문자열이면 POST /common/image로 업로드된 temp 파일명으로 교체
+export interface PatchUserRequest {
+  nickname: string
+  handle: string | null
+  bio: string | null
+  profileImage?: string | null
+  coverImage?: string | null
+}
+
+// GET /users/:id/followers, GET /users/:id/following 목록 항목.
+// ApiUserProfile과 달리 followerCount/followeeCount는 참고용이라 optional 취급하지 않고
+// 그대로 포함하되(Backend가 항상 채워 보냄), email 등 민감 정보는 없다.
+export interface ApiFollowUser {
+  id: number
+  nickname: string
+  handle: string | null
+  profileImage: string | null
+  bio: string | null
+  followerCount: number
+  followeeCount: number
+  // 요청자(로그인 사용자) 기준. 비로그인이면 항상 false.
+  isFollowing: boolean
+}
+
 export type UserRole = 'ADMIN' | 'USER'
 
 // GET /users/me 응답 그대로의 형태. Mock UI가 쓰는 `User`와 필드명/nullability가

@@ -8,6 +8,8 @@ import { TransactionInterceptor } from 'src/common/interceptor/transaction.inter
 import type { QueryRunner as QR } from 'typeorm';
 import { QueryRunner } from 'src/common/decorator/query-runner.decorator';
 import { IsPublic } from 'src/common/decorator/is-public.decorator';
+import { PatchUserDto } from './dto/patch-user.dto';
+import { BasePaginationDto } from 'src/common/dto/base-pagination.dto';
 
 @Controller('users')
 export class UsersController {
@@ -34,6 +36,17 @@ export class UsersController {
   @Get('me')
   getMe(@User() user: UsersModel) {
     return user;
+  }
+
+  //* PATCH /users/me -> Edit Profile 저장(nickname/handle/bio/profileImage/coverImage)
+  @Patch('me')
+  @UseInterceptors(TransactionInterceptor)
+  patchMe(
+    @User('id') userId: number,
+    @Body() body: PatchUserDto,
+    @QueryRunner() qr: QR,
+  ) {
+    return this.usersService.updateUser(userId, body, qr);
   }
 
   //* GET /users -> User 조회
@@ -102,6 +115,29 @@ export class UsersController {
     }
 
     return true;
+  }
+
+  //* GET /users/:id/followers -> :id를 팔로우하는 사람들(확정된 관계만) 목록, cursor pagination.
+  // 세그먼트가 2개(:id/followers)라 아래 GET /users/:id(세그먼트 1개)와 겹치지 않는다.
+  @Get(':id/followers')
+  @IsPublic()
+  getFollowers(
+    @Param('id', ParseIntPipe) id: number,
+    @Query() query: BasePaginationDto,
+    @Request() req,
+  ) {
+    return this.usersService.paginateFollowers(query, id, req.user?.id);
+  }
+
+  //* GET /users/:id/following -> :id가 팔로우하는 사람들(확정된 관계만) 목록, cursor pagination.
+  @Get(':id/following')
+  @IsPublic()
+  getFollowing(
+    @Param('id', ParseIntPipe) id: number,
+    @Query() query: BasePaginationDto,
+    @Request() req,
+  ) {
+    return this.usersService.paginateFollowing(query, id, req.user?.id);
   }
 
   //* GET /users/:id -> Profile 화면용 공개 사용자 조회.

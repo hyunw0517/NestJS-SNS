@@ -1,9 +1,14 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UsersModel } from './entity/users.entity';
-import { Repository } from 'typeorm';
+import { FindOperator, FindOptionsWhere, In, LessThan, MoreThan, Not, Repository } from 'typeorm';
 import { UserFollowsModel } from './entity/user-followers.entity';
 import { QueryRunner } from 'typeorm';
+import { basename, join, posix } from 'path';
+import { promises } from 'fs';
+import { TEMP_FOLDER_PATH, USERS_IMAGE_PATH, USERS_PUBLIC_IMAGE_PATH } from 'src/common/const/path.const';
+import { PatchUserDto } from './dto/patch-user.dto';
+import { BasePaginationDto } from 'src/common/dto/base-pagination.dto';
 
 @Injectable()
 export class UsersService {
@@ -93,6 +98,260 @@ export class UsersService {
             followeeCount: user.followeeCount,
             createdAt: user.createdAt,
             isFollowing,
+        };
+    }
+
+    // 빈 문자열/공백만 있는 문자열은 "값 제거"로 취급해 null로 정규화한다(handle/bio 공통).
+    private normalizeOptionalText(value: string | null): string | null {
+        if( value === null ){
+            return null;
+        }
+
+        const trimmed = value.trim();
+
+        return trimmed.length === 0 ? null : trimmed;
+    }
+
+    // temp 폴더에 업로드된 파일을 public/users로 옮기고, 저장할 URL path를 반환한다.
+    // PostsImagesService.createPostImage와 동일한 패턴(temp -> 실제 폴더 rename).
+    private async moveTempImageToUsersFolder(fileName: string): Promise<string> {
+        const tempFilePath = join(TEMP_FOLDER_PATH, fileName);
+
+        try{
+            await promises.access(tempFilePath);
+        }catch{
+            throw new BadRequestException('존재하지 않는 파일입니다.');
+        }
+
+        const newFileName = basename(tempFilePath);
+        const newPath = join(USERS_IMAGE_PATH, newFileName);
+
+        await promises.rename(tempFilePath, newPath);
+
+        return `/${posix.join(USERS_PUBLIC_IMAGE_PATH, newFileName)}`;
+    }
+
+    private async deleteUsersImageFile(storedPath: string) {
+        const filePath = join(USERS_IMAGE_PATH, basename(storedPath));
+
+        try{
+            await promises.unlink(filePath);
+        }catch{
+            // 파일이 이미 존재하지 않는 경우 무시(posts 쪽과 동일한 관례)
+        }
+    }
+
+    // profileImage/coverImage 컬럼 하나의 다음 상태를 계산한다. 호출부에서 이미
+    // dto의 값이 undefined가 아님을 확인한 뒤에만 부르므로(=필드를 건드리기로 확정된 경우만),
+    // 여기서는 null(제거)과 string(교체) 두 가지만 다룬다.
+    // null: 기존 이미지 제거 / string: temp의 새 파일로 교체(기존 파일은 정리)
+    private async resolveImageColumnUpdate(
+        currentValue: string | null | undefined,
+        newValue: string | null,
+    ): Promise<string | null> {
+        if( newValue === null ){
+            if( currentValue ){
+                await this.deleteUsersImageFile(currentValue);
+            }
+
+            return null;
+        }
+
+        const movedPath = await this.moveTempImageToUsersFolder(newValue);
+
+        if( currentValue ){
+            await this.deleteUsersImageFile(currentValue);
+        }
+
+        return movedPath;
+    }
+
+    // Edit Profile 저장. dto에 존재하지 않는(undefined) 필드는 건드리지 않고,
+    // 존재하는 필드만 갱신한다(부분 수정 계약 — PostsService.updatePost와 동일한 방식).
+    async updateUser(userId: number, dto: PatchUserDto, qr?: QueryRunner){
+        const repository = this.getUsersRepotiroy(qr);
+
+        const user = await repository.findOne({
+            where: { id: userId },
+        });
+
+        if( !user ){
+            throw new NotFoundException(`id: ${userId} User는 존재하지 않습니다.`);
+        }
+
+        const updatePayload: {
+            nickname?: string;
+            handle?: string | null;
+            bio?: string | null;
+            profileImage?: string | null;
+            coverImage?: string | null;
+        } = {};
+
+        if( dto.nickname !== undefined ){
+            updatePayload.nickname = dto.nickname;
+        }
+
+        if( dto.handle !== undefined ){
+            const normalizedHandle = this.normalizeOptionalText(dto.handle);
+
+            if( normalizedHandle ){
+                const handleTaken = await repository.exists({
+                    where: {
+                        handle: normalizedHandle,
+                        id: Not(userId),
+                    },
+                });
+
+                if( handleTaken ){
+                    throw new BadRequestException('이미 사용 중인 handle입니다.');
+                }
+            }
+
+            updatePayload.handle = normalizedHandle;
+        }
+
+        if( dto.bio !== undefined ){
+            updatePayload.bio = this.normalizeOptionalText(dto.bio);
+        }
+
+        if( dto.profileImage !== undefined ){
+            updatePayload.profileImage = await this.resolveImageColumnUpdate(user.profileImage, dto.profileImage);
+        }
+
+        if( dto.coverImage !== undefined ){
+            updatePayload.coverImage = await this.resolveImageColumnUpdate(user.coverImage, dto.coverImage);
+        }
+
+        // handle/bio/profileImage/coverImage 컬럼은 DB상 nullable이지만 엔티티 타입은
+        // `string | undefined`로 선언돼 있어(null 미반영), null을 명시적으로 저장하려는
+        // 이 경우에만 cast가 필요하다. 런타임에는 TypeORM이 null을 그대로 컬럼에 반영한다.
+        await repository.save({
+            ...user,
+            ...updatePayload,
+        } as UsersModel);
+
+        return repository.findOne({
+            where: { id: userId },
+        });
+    }
+
+    // handle 중복확인 등과 별개로, Profile Followers/Following 다이얼로그 목록 조회용.
+    // email 등 민감 필드를 빼고 최소한의 필드 + 요청자 기준 isFollowing만 내려준다.
+    private toPublicFollowUser(user: UsersModel, isFollowing: boolean) {
+        return {
+            id: user.id,
+            nickname: user.nickname,
+            handle: user.handle,
+            profileImage: user.profileImage,
+            bio: user.bio,
+            followerCount: user.followerCount,
+            followeeCount: user.followeeCount,
+            isFollowing,
+        };
+    }
+
+    // requestUserId가 로그인 상태가 아니면(비로그인) 전부 false로 채운다
+    // (PostsService.attachIsLiked와 동일한 이유).
+    private async attachIsFollowing(users: UsersModel[], requestUserId?: number) {
+        if( !requestUserId || users.length === 0 ){
+            return users.map((user) => this.toPublicFollowUser(user, false));
+        }
+
+        const follows = await this.userFollowsRepository.find({
+            where: {
+                follower: { id: requestUserId },
+                followee: { id: In(users.map((user) => user.id)) },
+                isConfirmed: true,
+            },
+            relations: { followee: true },
+        });
+
+        const followingIds = new Set(follows.map((follow) => follow.followee.id));
+
+        return users.map((user) => this.toPublicFollowUser(user, followingIds.has(user.id)));
+    }
+
+    private async assertUserExists(userId: number) {
+        const exists = await this.usersRepository.exists({ where: { id: userId } });
+
+        if( !exists ){
+            throw new NotFoundException(`id: ${userId} User는 존재하지 않습니다.`);
+        }
+    }
+
+    // Followers/Following 목록 둘 다 같은 모양의 cursor pagination이 필요하지만, 대상은
+    // UserFollowsModel(follower/followee 관계 row)이라 CommonService.paginate가 기대하는
+    // "단일 엔티티를 그대로 페이지네이션"과는 다르게 조인된 상대방 user로 매핑해야 한다.
+    // CommonService.paginate를 그대로 쓰려면 UsersModule <-> CommonModule 순환 의존성이
+    // 생겨(CommonModule이 이미 UsersModule을 참조) forwardRef가 필요해지므로, 그 정도
+    // 배선 비용 없이 동일한 cursor 계약(`{data, cursor: {after}, count}`)만 직접 구현한다.
+    // Frontend의 infinite query hook들은 `cursor.after`만 사용하므로 이 정도로 충분하다.
+    private buildFollowCursorWhere(
+        base: FindOptionsWhere<UserFollowsModel>,
+        dto: BasePaginationDto,
+    ): FindOptionsWhere<UserFollowsModel> {
+        let cursorIdCondition: FindOperator<number> | undefined;
+
+        if( dto.where__id__more_than ){
+            cursorIdCondition = MoreThan(dto.where__id__more_than);
+        }else if( dto.where__id__less_than ){
+            cursorIdCondition = LessThan(dto.where__id__less_than);
+        }
+
+        return {
+            ...base,
+            isConfirmed: true,
+            ...(cursorIdCondition ? { id: cursorIdCondition } : {}),
+        };
+    }
+
+    async paginateFollowers(dto: BasePaginationDto, targetUserId: number, requestUserId?: number){
+        await this.assertUserExists(targetUserId);
+
+        const rows = await this.userFollowsRepository.find({
+            where: this.buildFollowCursorWhere({ followee: { id: targetUserId } }, dto),
+            relations: { follower: true },
+            order: { createdAt: dto.order__createdAt },
+            take: dto.take,
+        });
+
+        const data = await this.attachIsFollowing(rows.map((row) => row.follower), requestUserId);
+        const lastRow = rows.length > 0 && rows.length === dto.take ? rows[rows.length - 1] : null;
+
+        return {
+            data,
+            cursor: { after: lastRow?.id ?? null },
+            count: data.length,
+            // CommonService.cursorPaginate와 동일한 응답 계약(CursorPaginationResult)을
+            // 맞추기 위한 필드. 절대 URL을 만드는 next는 이 엔드포인트에서 실제로
+            // 구현하지 않았고(Frontend가 next를 사용하지 않음, cursor.after만 사용),
+            // Frontend 타입과의 형태만 맞춰 항상 null로 둔다.
+            next: null,
+        };
+    }
+
+    async paginateFollowing(dto: BasePaginationDto, targetUserId: number, requestUserId?: number){
+        await this.assertUserExists(targetUserId);
+
+        const rows = await this.userFollowsRepository.find({
+            where: this.buildFollowCursorWhere({ follower: { id: targetUserId } }, dto),
+            relations: { followee: true },
+            order: { createdAt: dto.order__createdAt },
+            take: dto.take,
+        });
+
+        const data = await this.attachIsFollowing(rows.map((row) => row.followee), requestUserId);
+        const lastRow = rows.length > 0 && rows.length === dto.take ? rows[rows.length - 1] : null;
+
+        return {
+            data,
+            cursor: { after: lastRow?.id ?? null },
+            count: data.length,
+            // CommonService.cursorPaginate와 동일한 응답 계약(CursorPaginationResult)을
+            // 맞추기 위한 필드. 절대 URL을 만드는 next는 이 엔드포인트에서 실제로
+            // 구현하지 않았고(Frontend가 next를 사용하지 않음, cursor.after만 사용),
+            // Frontend 타입과의 형태만 맞춰 항상 null로 둔다.
+            next: null,
         };
     }
 

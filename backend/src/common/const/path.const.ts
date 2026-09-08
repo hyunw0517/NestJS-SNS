@@ -12,6 +12,9 @@ export const POSTS_FOLDER_NAME = 'posts';
 // 임시 폴더 이름
 export const TEMP_FOLDER_NAME = 'temp';
 
+// 사용자 프로필/커버 이미지를 저장할 폴더 이름
+export const USERS_FOLDER_NAME = 'users';
+
 // 실제 공개 폴더의 절대 경로
 // /{프로젝트 위치}/public
 export const PUBLIC_FOLDER_PATH = join(
@@ -39,4 +42,17 @@ export const POST_PUBLIC_IMAGE_PATH = posix.join(
 export const TEMP_FOLDER_PATH = join(
     PUBLIC_FOLDER_PATH,
     TEMP_FOLDER_NAME,
+)
+
+// 사용자 프로필/커버 이미지를 저장할 폴더
+// {프로젝트의 실제 경로}/public/users
+export const USERS_IMAGE_PATH = join(
+    PUBLIC_FOLDER_PATH,
+    USERS_FOLDER_NAME,
+)
+
+// /public/users
+export const USERS_PUBLIC_IMAGE_PATH = posix.join(
+    PUBLIC_FOLDER_NAME,
+    USERS_FOLDER_NAME,
 )

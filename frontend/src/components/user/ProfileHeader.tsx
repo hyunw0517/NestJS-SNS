@@ -10,9 +10,21 @@ interface ProfileHeaderProps {
   isFollowing?: boolean
   isFollowPending?: boolean
   onToggleFollow?: () => void
+  onEditProfile?: () => void
+  onShowFollowers?: () => void
+  onShowFollowing?: () => void
 }
 
-function ProfileHeader({ user, isOwnProfile, isFollowing = false, isFollowPending = false, onToggleFollow = () => {} }: ProfileHeaderProps) {
+function ProfileHeader({
+  user,
+  isOwnProfile,
+  isFollowing = false,
+  isFollowPending = false,
+  onToggleFollow = () => {},
+  onEditProfile = () => {},
+  onShowFollowers = () => {},
+  onShowFollowing = () => {},
+}: ProfileHeaderProps) {
   return (
     <div>
       <div className="relative">
@@ -31,8 +43,7 @@ function ProfileHeader({ user, isOwnProfile, isFollowing = false, isFollowPendin
 
       <div className="flex justify-end px-4 pt-3">
         {isOwnProfile ? (
-          // 이번 범위는 실제 수정 연동까지는 하지 않는다(요청 범위 밖). UI만 유지.
-          <Button variant="outline" className="rounded-full">
+          <Button variant="outline" className="rounded-full" onClick={onEditProfile}>
             Edit Profile
           </Button>
         ) : (
@@ -59,14 +70,14 @@ function ProfileHeader({ user, isOwnProfile, isFollowing = false, isFollowPendin
         </div>
 
         <div className="mt-3 flex gap-4 text-sm">
-          <span>
+          <button type="button" onClick={onShowFollowing} aria-label="팔로잉 목록 보기" className="hover:underline">
             <span className="font-semibold text-foreground">{user.followingCount}</span>{' '}
             <span className="text-muted-foreground">Following</span>
-          </span>
-          <span>
+          </button>
+          <button type="button" onClick={onShowFollowers} aria-label="팔로워 목록 보기" className="hover:underline">
             <span className="font-semibold text-foreground">{user.followerCount}</span>{' '}
             <span className="text-muted-foreground">Followers</span>
-          </span>
+          </button>
         </div>
       </div>
     </div>

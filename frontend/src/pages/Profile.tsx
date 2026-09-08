@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import PostCard from '@/components/post/PostCard'
 import ReplyCard from '@/components/comment/ReplyCard'
+import EditProfileDialog from '@/components/user/EditProfileDialog'
+import FollowListDialog from '@/components/user/FollowListDialog'
 import ProfileHeader from '@/components/user/ProfileHeader'
 import { useAuth } from '@/context/useAuth'
 import { useUserCommentsInfiniteQuery } from '@/hooks/useComments'
@@ -32,6 +34,9 @@ function Profile() {
   const toggleFollow = useToggleFollowMutation()
   // Home의 좋아요 버튼과 동일한 이유(리렌더 지연으로 인한 isPending stale 읽기 방지)로 ref를 사용한다.
   const isTogglingFollowRef = useRef(false)
+
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false)
+  const [followListTab, setFollowListTab] = useState<'followers' | 'following' | null>(null)
 
   const [activeTab, setActiveTab] = useState<ProfileTab>('Posts')
 
@@ -127,7 +132,33 @@ function Profile() {
             isFollowing={profileUser.isFollowing}
             isFollowPending={toggleFollow.isPending}
             onToggleFollow={handleToggleFollow}
+            onEditProfile={() => setIsEditProfileOpen(true)}
+            onShowFollowers={() => setFollowListTab('followers')}
+            onShowFollowing={() => setFollowListTab('following')}
           />
+
+          {isOwnProfile && (
+            <EditProfileDialog
+              open={isEditProfileOpen}
+              onOpenChange={setIsEditProfileOpen}
+              initialValues={{
+                nickname: profileUser.nickname,
+                handle: profileUser.handle,
+                bio: profileUser.bio,
+                profileImage: profileUser.profileImage,
+                coverImage: profileUser.coverImage,
+              }}
+            />
+          )}
+
+          {followListTab && (
+            <FollowListDialog
+              open={followListTab !== null}
+              onOpenChange={(nextOpen) => { if (!nextOpen) setFollowListTab(null) }}
+              userId={profileUser.id}
+              initialTab={followListTab}
+            />
+          )}
 
           <div className="flex border-b">
             {tabs.map((tab) => (
