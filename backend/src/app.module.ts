@@ -23,6 +23,8 @@ import { CommentsModel } from './posts/comments/entity/comments.entity';
 import { RolesGuard } from './users/guard/roles.guard';
 import { AccessTokenGuard } from './auth/guard/bearer-token.guard';
 import { UserFollowsModel } from './users/entity/user-followers.entity';
+import { PostLikeModel } from './posts/entity/post-likes.entity';
+import { CommentLikeModel } from './posts/comments/entity/comment-likes.entity';
 
 @Module({
   //imports: 다른 모듈을 불러옴. 
@@ -53,7 +55,9 @@ import { UserFollowsModel } from './users/entity/user-followers.entity';
         ChatsModel,
         MessagesModel,
         CommentsModel,
-        UserFollowsModel, 
+        UserFollowsModel,
+        PostLikeModel,
+        CommentLikeModel,
       ],
       synchronize: true,
     }),

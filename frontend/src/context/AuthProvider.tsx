@@ -3,6 +3,7 @@ import { login as loginApi, register as registerApi } from '@/api/auth'
 import { getMe } from '@/api/users'
 import { AuthContext, type AuthContextValue } from '@/context/AuthContext'
 import { subscribeAuthExpired } from '@/lib/authEvents'
+import { queryClient } from '@/lib/queryClient'
 import { clearTokens, getAccessToken, getRefreshToken, setTokens } from '@/lib/tokenStorage'
 import type { LoginRequest, RegisterRequest } from '@/types/auth'
 import type { CurrentUser } from '@/types/user'
@@ -50,11 +51,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // apiClient가 refresh 실패로 토큰을 지운 경우, AuthContext의 user도 함께 비워
-  // "tokenStorage는 비로그인인데 user는 로그인 상태"인 불일치를 막는다.
+  // apiClient가 refresh 실패로 토큰을 지운 경우, AuthContext의 user도 함께 비우고
+  // (tokenStorage는 비로그인인데 user는 로그인 상태인 불일치 방지) 캐시도 정리한다 -
+  // logout()과 동일하게, 이전 사용자 기준으로 계산된 isLiked/isFollowing 등이 남지 않게 한다.
   useEffect(() => {
     return subscribeAuthExpired(() => {
       setUser(null)
+      queryClient.clear()
     })
   }, [])
 
@@ -79,8 +82,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   function logout() {
+    // clearTokens()가 sessionEpoch을 올려서, 지금 이 순간 진행 중이던 자동 refresh가
+    // 나중에 응답을 받아도 storage에 accessToken을 다시 쓰지 않는다(apiClient.ts 참고).
     clearTokens()
     setUser(null)
+
+    // 서버에 세션/refreshToken을 무효화하는 별도 개념이 없는 순수 JWT 구조라(Backend에
+    // logout/revoke endpoint 자체가 없음), 로그아웃은 클라이언트 상태 정리만으로 완결된다.
+    // isLiked/isFollowing처럼 로그인한 사용자 기준으로 계산돼 캐시에 남아있는 값들을
+    // 하나하나 무효화하는 대신, 전체를 비워 다음 로그인/비로그인 조회가 항상 서버에서
+    // 새로 계산되게 한다.
+    queryClient.clear()
   }
 
   // Profile 수정 등 이후 재조회 용도. 초기 세션 복구와 달리 실패를 삼키지 않고

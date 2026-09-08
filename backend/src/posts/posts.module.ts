@@ -8,11 +8,12 @@ import { UsersModule } from 'src/users/users.module';
 import { CommonModule } from 'src/common/common.module';
 import { ImageModel } from 'src/common/entity/image.entity';
 import { PostsImagesService } from './image/images.service';
+import { PostLikeModel } from './entity/post-likes.entity';
 
 @Module({
   imports: [
     //typeORM Repository 주입
-    TypeOrmModule.forFeature([PostsModel, ImageModel]),
+    TypeOrmModule.forFeature([PostsModel, ImageModel, PostLikeModel]),
     AuthModule,
     UsersModule,
     CommonModule,

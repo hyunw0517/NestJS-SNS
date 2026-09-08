@@ -58,5 +58,8 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 # Docker volumes (Postgres data)
 /postgres-data
 
+/backend/public/posts/*
+/backend/public/temp/*
+
 claude_guide[0-9]*.md
 .claude/

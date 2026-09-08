@@ -20,6 +20,12 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (requestPath) => requestPath.replace(/^\/api/, ''),
       },
+      // 업로드된 게시글 이미지 등, 백엔드가 ServeStaticModule로 그대로
+      // /public/* 경로에 내려주는 정적 파일. prefix가 동일해 rewrite 불필요.
+      '/public': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
     },
   },
 })

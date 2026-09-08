@@ -1,4 +1,4 @@
-import { join } from "path";
+import { join, posix } from "path";
 
 // 서버 프로젝트의 루트 폴더
 export const PROJECT_ROOT_PATH = process.cwd(); //cwd -> 프로젝트를 실행하는 위치
@@ -26,11 +26,12 @@ export const POST_IMAGE_PATH = join(
     POSTS_FOLDER_NAME, 
 )
 
-// 이미지 다운로드용 경로 
+// 이미지 다운로드용 경로 (URL path이지 파일시스템 경로가 아니므로,
+// Windows에서도 항상 '/'로만 이어지도록 posix.join을 사용한다)
 // /public/posts/xxx.jpg
-export const POST_PUBLIC_IMAGE_PATH = join(
-    PUBLIC_FOLDER_NAME, 
-    POSTS_FOLDER_NAME, 
+export const POST_PUBLIC_IMAGE_PATH = posix.join(
+    PUBLIC_FOLDER_NAME,
+    POSTS_FOLDER_NAME,
 )
 
 // 임시 파일들을 저장할 폴더

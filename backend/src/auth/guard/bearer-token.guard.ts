@@ -29,7 +29,26 @@ export class BearerTokenGuard implements CanActivate {
         if( isPublic ){
             req.isRoutePublic = true;
 
-            return true; 
+            // 공개 라우트라도 유효한 accessToken이 함께 왔으면 req.user를 채워둔다.
+            // "로그인 없이도 볼 수 있지만, 로그인했으면 개인화된 정보(예: 내가 좋아요했는지)도
+            // 함께 보여준다" 같은 케이스를 위한 것. 토큰이 없거나 유효하지 않아도 공개
+            // 라우트이므로 에러를 던지지 않고 그냥 비로그인으로 취급한다.
+            const rawToken = req.headers['authorization'];
+
+            if( rawToken ){
+                try{
+                    const token = this.authService.extractTokenFromHeader(rawToken, true);
+                    const result = await this.authService.verifyToken(token);
+
+                    if( result.type === 'access' ){
+                        req.user = await this.usersService.getUserByEmail(result.email);
+                    }
+                }catch{
+                    // 무시 - 비로그인으로 취급
+                }
+            }
+
+            return true;
         }
 
         const rawToken = req.headers['authorization'];

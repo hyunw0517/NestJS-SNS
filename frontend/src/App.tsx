@@ -15,7 +15,7 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<Home />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/:id?" element={<Profile />} />
           <Route path="/posts/:id" element={<PostDetail />} />
           <Route path="/messages" element={<Messages />} />
         </Route>

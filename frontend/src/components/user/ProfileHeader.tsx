@@ -6,9 +6,13 @@ import { formatJoinDate } from '@/utils/formatRelativeTime'
 
 interface ProfileHeaderProps {
   user: User
+  isOwnProfile: boolean
+  isFollowing?: boolean
+  isFollowPending?: boolean
+  onToggleFollow?: () => void
 }
 
-function ProfileHeader({ user }: ProfileHeaderProps) {
+function ProfileHeader({ user, isOwnProfile, isFollowing = false, isFollowPending = false, onToggleFollow = () => {} }: ProfileHeaderProps) {
   return (
     <div>
       <div className="relative">
@@ -26,9 +30,21 @@ function ProfileHeader({ user }: ProfileHeaderProps) {
       </div>
 
       <div className="flex justify-end px-4 pt-3">
-        <Button variant="outline" className="rounded-full">
-          Edit Profile
-        </Button>
+        {isOwnProfile ? (
+          // 이번 범위는 실제 수정 연동까지는 하지 않는다(요청 범위 밖). UI만 유지.
+          <Button variant="outline" className="rounded-full">
+            Edit Profile
+          </Button>
+        ) : (
+          <Button
+            variant={isFollowing ? 'outline' : 'default'}
+            className="rounded-full"
+            onClick={onToggleFollow}
+            disabled={isFollowPending}
+          >
+            {isFollowPending ? '처리 중...' : isFollowing ? 'Following' : 'Follow'}
+          </Button>
+        )}
       </div>
 
       <div className="mt-6 px-4 pb-3">

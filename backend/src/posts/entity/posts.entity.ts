@@ -57,5 +57,8 @@ export class PostsModel extends BaseModel {
     @OneToMany((type) => CommentsModel, (comments) => comments.post)
     comments: CommentsModel[];
 
+    // DB 컬럼이 아니다. 요청을 보낸 사용자가 이 게시글을 좋아요했는지를 서비스 레벨에서
+    // 채워 넣는 값(PostsService.attachIsLiked)이라 @Column을 붙이지 않는다.
+    isLiked?: boolean;
 
 }

@@ -1,7 +1,7 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { refreshAccessToken } from '@/api/auth'
 import { emitAuthExpired } from '@/lib/authEvents'
-import { clearTokens, getAccessToken, getRefreshToken, setAccessToken } from '@/lib/tokenStorage'
+import { clearTokens, getAccessToken, getRefreshToken, getSessionEpoch, setAccessToken } from '@/lib/tokenStorage'
 
 const BASE_URL = '/api'
 
@@ -53,9 +53,17 @@ let refreshPromise: Promise<string> | null = null
 
 function refreshAccessTokenOnce(refreshToken: string) {
   if (!refreshPromise) {
+    // 이 refresh가 시작된 시점의 epoch. 응답이 도착했을 때 epoch이 그대로면(그 사이
+    // 로그아웃/재로그인이 없었으면) storage에 반영하고, 바뀌었다면 이미 무효한 세션에
+    // 대한 응답이므로 버린다(tokenStorage.ts의 sessionEpoch 주석 참고).
+    const epochAtStart = getSessionEpoch()
+
     refreshPromise = refreshAccessToken(refreshToken)
       .then((accessToken) => {
-        setAccessToken(accessToken)
+        if (getSessionEpoch() === epochAtStart) {
+          setAccessToken(accessToken)
+        }
+
         return accessToken
       })
       .finally(() => {

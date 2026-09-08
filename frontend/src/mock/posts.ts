@@ -4,6 +4,7 @@ export const mockPosts: Post[] = [
   {
     id: 1,
     author: {
+      id: 1,
       nickname: '김도윤',
       handle: 'doyoon_dev',
       profileImage: 'https://i.pravatar.cc/150?img=12',
@@ -17,6 +18,7 @@ export const mockPosts: Post[] = [
   {
     id: 2,
     author: {
+      id: 2,
       nickname: '박서연',
       handle: 'seoyeon.codes',
       profileImage: 'https://i.pravatar.cc/150?img=32',
@@ -31,6 +33,7 @@ export const mockPosts: Post[] = [
   {
     id: 3,
     author: {
+      id: 3,
       nickname: '이하늘',
       handle: 'skylee',
       profileImage: 'https://i.pravatar.cc/150?img=47',
@@ -45,6 +48,7 @@ export const mockPosts: Post[] = [
   {
     id: 4,
     author: {
+      id: 4,
       nickname: '정민준',
       handle: 'minjun_j',
       profileImage: 'https://i.pravatar.cc/150?img=68',
@@ -58,6 +62,7 @@ export const mockPosts: Post[] = [
   {
     id: 5,
     author: {
+      id: 5,
       nickname: '최지우',
       handle: 'jiwoo_c',
     },
@@ -70,6 +75,7 @@ export const mockPosts: Post[] = [
   {
     id: 6,
     author: {
+      id: 1,
       nickname: '김도윤',
       handle: 'doyoon_dev',
       profileImage: 'https://i.pravatar.cc/150?img=12',
