@@ -72,10 +72,18 @@ export interface ApiFollowUser {
   isFollowing: boolean
 }
 
+// GET /users/search 응답 항목. 그룹 채팅 생성/초대 대상 선택용 최소 필드만.
+export interface ApiUserSearchResult {
+  id: number
+  nickname: string
+  handle: string | null
+  profileImage: string | null
+}
+
 export type UserRole = 'ADMIN' | 'USER'
 
-// GET /users/me 응답 그대로의 형태. Mock UI가 쓰는 `User`와 필드명/nullability가
-// 달라 하나로 합치지 않고 별도 타입으로 둔다.
+// GET /users/me 응답 그대로의 형태. ProfileHeader 등 UI 컴포넌트가 쓰는 `User`와
+// 필드명/nullability가 달라 하나로 합치지 않고 별도 타입으로 둔다.
 export interface CurrentUser {
   id: number
   nickname: string

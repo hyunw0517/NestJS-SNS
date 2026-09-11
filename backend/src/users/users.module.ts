@@ -3,7 +3,6 @@ import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModel } from './entity/users.entity';
-import { ChatsModel } from 'src/chats/entity/chats.entity';
 import { UserFollowsModel } from './entity/user-followers.entity';
 
 @Module({

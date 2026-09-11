@@ -1,4 +1,4 @@
-import { Body, ClassSerializerInterceptor, Controller, DefaultValuePipe, Delete, Get, Param, ParseBoolPipe, ParseIntPipe, Patch, Post, Query, Request, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, Request, UseInterceptors } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { RolesEnum } from './const/roles.const';
 import { Roles } from './decorator/roles.decorator';
@@ -17,20 +17,7 @@ export class UsersController {
     
   }
 
-  // //* Post /users -> User 추가
-  // @Post()
-  // postUser(
-  //   @Body('nickname') nickname: string,
-  //   @Body('email') email: string,
-  //   @Body('password') password: string
-  // ) {
-  //   return this.usersService.createUser({
-  //     nickname: nickname,
-  //     email: email,
-  //     password: password,
-  //   });
-  // }
-  //! 회원가입 기능을 auth.module로 대체
+  //! 회원가입은 auth.module(POST /auth/register/email)로 대체되어 여기엔 없다.
 
   //* GET /users/me -> 현재 로그인한 사용자 조회
   @Get('me')
@@ -49,24 +36,22 @@ export class UsersController {
     return this.usersService.updateUser(userId, body, qr);
   }
 
-  //* GET /users -> User 조회
+  //* GET /users -> User 조회(관리자 전용, 현재 이를 호출하는 관리자 화면은 없다)
   @Get()
   @Roles(RolesEnum.ADMIN)
-  //@UseInterceptors(ClassSerializerInterceptor)
-  /**
-   * serialization -> 직렬화 -> class의 object에서 JSON 포맷으로 변환
-   * deserialization -> 역직렬화
-   */
   getUsers() {
     return this.usersService.getAllUsers();
   }
 
-  @Get('follow/me')
-  async getFollow(
-    @User() user: UsersModel,
-    @Query('includeNotConfirmed', new DefaultValuePipe(false), ParseBoolPipe) includeNotConfirmed: boolean
+  //* GET /users/search?q=... -> 그룹 채팅 생성/초대 대상 선택용 최소 사용자 검색.
+  // 'follow'/'me'와 마찬가지로 리터럴 세그먼트라 아래 GET /:id보다 먼저 와야 한다.
+  // 인증 필요(로그인 사용자 목록 노출을 막고, 본인은 결과에서 제외해야 하므로).
+  @Get('search')
+  searchUsers(
+    @User('id') userId: number,
+    @Query('q') q?: string,
   ){
-    return this.usersService.getFollowers(user.id, includeNotConfirmed);
+    return this.usersService.searchUsers(userId, q);
   }
 
   @Post('follow/:id')
@@ -83,21 +68,6 @@ export class UsersController {
      await this.usersService.incrementFolloweeCount(user.id, qr);
 
      return true;
-  }
-
-  @Patch('follow/:id/confirm')
-  @UseInterceptors(TransactionInterceptor)
-  async patchFollowConfirm(
-    @User() user: UsersModel, 
-    @Param('id', ParseIntPipe) followerId: number,
-    @QueryRunner() qr: QR, 
-  ){
-    await this.usersService.confirmFollow(followerId, user.id, qr);
-
-    await this.usersService.incrementFollowerCount(user.id, qr);
-    await this.usersService.incrementFolloweeCount(followerId, qr);
-
-    return true;
   }
 
   @Delete('follow/:id')

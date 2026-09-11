@@ -21,9 +21,9 @@ interface ExistingImage {
 
 interface PostCardProps {
   post: Post
-  // 실제 API에 연결된 게시글에서만 true로 넘긴다. mock 데이터(Profile 등)는 기본값(false)
-  // 그대로 두면 수정/삭제 UI 자체가 렌더링되지 않아, mock id가 실제 게시글 id와
-  // 우연히 겹쳐도 실제 PATCH/DELETE 요청이 나갈 위험이 없다.
+  // 실제 게시글 수정/삭제가 가능한 화면(Home, Profile Posts/Media)에서만 true로 넘긴다.
+  // 이 값만으로 수정/삭제 버튼이 보이는 건 아니고, 실제 소유자 여부는 아래 canManage가
+  // 다시 확인한다(Backend IsPostMineOrAdminGuard가 최종 판단하는 것과 별개의 UI 가드).
   enableActions?: boolean
   isEditing?: boolean
   onStartEdit?: () => void

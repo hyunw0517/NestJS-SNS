@@ -6,12 +6,6 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PaginatePostDto } from './dto/paginate-post.dto';
 import { CommonService } from 'src/common/common.service';
-import { ConfigService } from '@nestjs/config';
-import { ENV_HOST_KEY, ENV_PROTOCOL_KEY } from 'src/common/const/env-keys.const';
-import { POST_IMAGE_PATH, PUBLIC_FOLDER_PATH, TEMP_FOLDER_PATH } from 'src/common/const/path.const';
-import { basename, join } from 'path';
-import { promises } from 'fs';
-import { CreatePostImageDto } from './image/dto/create-image.dto';
 import { ImageModel, ImageModelType } from 'src/common/entity/image.entity';
 import { DEFAULT_POST_FIND_OPTIONS } from './const/default-post-find-options.const';
 import { PostLikeModel } from './entity/post-likes.entity';
@@ -33,7 +27,6 @@ export class PostsService {
         @InjectRepository(PostLikeModel)
         private readonly postLikeRepository: Repository<PostLikeModel>,
         private readonly commonService: CommonService,
-        private readonly configService: ConfigService,
     ){}
 
     getPostLikeRepository(qr?: QueryRunner){
@@ -164,79 +157,6 @@ export class PostsService {
 
         return result;
     }
-
-    /*
-    async pagePaginatePosts( dto: PaginatePostDto ){
-        const [posts, count] = await this.postsRepository.findAndCount({
-            skip: dto.take * (dto.page! - 1),
-            order: {
-                createdAt: dto.order__createdAt,
-            },
-            take: dto.take,
-        });
-
-        return {
-            data: posts, 
-            total: count, 
-        }
-    }
-
-    async cursorPaginatePosts( dto: PaginatePostDto ){
-
-        const where : FindOptionsWhere<PostsModel> = {};
-
-        if( dto.where__id__less_than ){
-            where.id = LessThan(dto.where__id__less_than ?? 0);
-        }else if( dto.where__id__more_than ){
-            where.id = MoreThan(dto.where__id__more_than ?? 0);
-        }
-
-        const posts = await this.postsRepository.find({
-            where: where, 
-            order: {
-                createdAt: dto.order__createdAt,
-            },
-            take: dto.take,
-        });
-
-        // 해당되는 포스트가 0개 이상이면 마지막 포스트를 가져오고 아니면 null을 반환한다. 
-        const lastItem = posts.length > 0 && posts.length === dto.take ? posts[posts.length - 1] : null;
-        
-        const protocol = this.configService.get<string>(ENV_PROTOCOL_KEY);
-        const host = this.configService.get<string>(ENV_HOST_KEY);
-
-        const nextUrl = lastItem && new URL(`${protocol}://${host}/posts`);
-
-        if( nextUrl ){
-            for( const key of Object.keys(dto) ){
-                if( dto[key] ){
-                    if( key !== 'where__id__more_than' && key !== 'where__id__less_than' ){
-                        nextUrl.searchParams.append(key, dto[key].toString() );
-                    }
-                }
-            }
-            
-            let key: any = null;
-
-            if( dto.order__createdAt === 'ASC' ){
-                key = 'where__id__more_than';
-            }else{
-                key = 'where__id__less_than';
-            }
-
-            nextUrl.searchParams.append( key, lastItem.id.toString() );
-        }
-
-        return {
-            data: posts, 
-            cursor: {
-                after: lastItem?.id ?? null, 
-            }, 
-            count: posts.length, 
-            next: nextUrl?.toString() ?? null, 
-        }
-    }
-    */
 
     //* GET(:id)
     async getPostById(id: number, qr?: QueryRunner, requestUserId?: number){

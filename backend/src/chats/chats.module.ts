@@ -3,6 +3,7 @@ import { ChatsService } from './chats.service';
 import { ChatsController } from './chats.controller';
 import { ChatsGateway } from './chats.gateway';
 import { ChatsModel } from './entity/chats.entity';
+import { ChatMembersModel } from './entity/chat-members.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CommonModule } from 'src/common/common.module';
 import { ChatsMessagesService } from './messages/messages.service';
@@ -15,8 +16,9 @@ import { UsersModule } from 'src/users/users.module';
   imports:[
     TypeOrmModule.forFeature([
       ChatsModel,
+      ChatMembersModel,
       MessagesModel,
-    ]), 
+    ]),
     CommonModule, 
     AuthModule, 
     UsersModule, 

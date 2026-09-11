@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UsersModel } from './entity/users.entity';
-import { FindOperator, FindOptionsWhere, In, LessThan, MoreThan, Not, Repository } from 'typeorm';
+import { FindOperator, FindOptionsWhere, ILike, In, LessThan, MoreThan, Not, Repository } from 'typeorm';
 import { UserFollowsModel } from './entity/user-followers.entity';
 import { QueryRunner } from 'typeorm';
 import { basename, join, posix } from 'path';
@@ -62,6 +62,34 @@ export class UsersService {
                 email,
             },
         });
+    }
+
+    // 그룹 채팅 생성/초대 대상 선택용 최소 검색. q가 없으면(최초 진입 시) 고를 수 있게
+    // id 오름차순으로 일부만 보여주고, q가 있으면 nickname/handle에 대해 대소문자
+    // 구분 없이 부분일치 검색한다. 요청자 본인은 항상 제외(자기 자신을 초대 대상으로
+    // 고를 수 없어야 하므로). email/password 등 민감 필드는 내려주지 않는다.
+    async searchUsers(requesterId: number, q?: string){
+        const trimmed = q?.trim() ?? '';
+
+        const where: FindOptionsWhere<UsersModel> | FindOptionsWhere<UsersModel>[] = trimmed
+            ? [
+                { nickname: ILike(`%${trimmed}%`), id: Not(requesterId) },
+                { handle: ILike(`%${trimmed}%`), id: Not(requesterId) },
+            ]
+            : { id: Not(requesterId) };
+
+        const users = await this.usersRepository.find({
+            where,
+            order: { id: 'ASC' },
+            take: 20,
+        });
+
+        return users.map((user) => ({
+            id: user.id,
+            nickname: user.nickname,
+            handle: user.handle,
+            profileImage: user.profileImage,
+        }));
     }
 
     // Profile 화면용 공개 조회. email 등 민감 필드를 노출하지 않도록 엔티티를 그대로
@@ -355,38 +383,6 @@ export class UsersService {
         };
     }
 
-    async getFollowers(userId: number, includeNotConfirmed: boolean) {
-
-        const where = {
-            followee: {
-                id: userId,
-            },
-        }
-
-        if( !includeNotConfirmed ){
-            where['isConfirmed'] = true;
-        }
-
-        const result = await this.userFollowsRepository.find({
-            where: where,
-            relations:{
-                follower: true,
-                followee: true, 
-            },
-        });
-
-        if(!result){
-            throw new BadRequestException(`id: ${userId} User는 존재하지 않습니다.`);
-        }
-
-        return result.map((x) => ({
-            id: x.follower.id, 
-            nickname: x.follower.nickname,
-            email: x.follower.email,
-            isConfirmed: x.isConfirmed,
-        }));
-    }
-
     async followUser(followerId: number, followeeId: number, qr?: QueryRunner){
         if( followerId === followeeId ){
             throw new BadRequestException('자기 자신을 팔로우할 수 없습니다.');
@@ -430,36 +426,6 @@ export class UsersService {
             // 요청/알림 UI가 없어 confirm을 호출할 방법이 없다. Twitter 스타일로 즉시
             // 확정해 팔로우 즉시 카운트에 반영되도록 한다.
             isConfirmed: true,
-        });
-
-        return true;
-    }
-
-    async confirmFollow(followerId: number, followeeId: number, qr?: QueryRunner){
-        const userFollowsRepository = this.getUserFollowRepository(qr); 
-        
-        const existing = await userFollowsRepository.findOne({
-            where:{
-                follower: {
-                    id: followerId,
-                },
-                followee: {
-                    id: followeeId,
-                }
-            },
-            relations:{
-                follower: true,
-                followee: true, 
-            },
-        });
-        
-        if(!existing){
-            throw new BadRequestException('존재하지 않는 팔로우 요청입니다.'); 
-        }
-
-        await userFollowsRepository.save({
-            ...existing,
-            isConfirmed: true, 
         });
 
         return true;

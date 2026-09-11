@@ -9,6 +9,7 @@ import FollowListDialog from '@/components/user/FollowListDialog'
 import ProfileHeader from '@/components/user/ProfileHeader'
 import { useAuth } from '@/context/useAuth'
 import { useUserCommentsInfiniteQuery } from '@/hooks/useComments'
+import { useGetOrCreateDirectChatMutation } from '@/hooks/useChats'
 import { usePostsInfiniteQuery } from '@/hooks/usePosts'
 import { useToggleFollowMutation, useUserProfileQuery } from '@/hooks/useUsers'
 import { cn } from '@/lib/utils'
@@ -34,6 +35,9 @@ function Profile() {
   const toggleFollow = useToggleFollowMutation()
   // Home의 좋아요 버튼과 동일한 이유(리렌더 지연으로 인한 isPending stale 읽기 방지)로 ref를 사용한다.
   const isTogglingFollowRef = useRef(false)
+
+  const getOrCreateDirectChat = useGetOrCreateDirectChatMutation()
+  const isMessagingRef = useRef(false)
 
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false)
   const [followListTab, setFollowListTab] = useState<'followers' | 'following' | null>(null)
@@ -100,6 +104,20 @@ function Profile() {
     )
   }
 
+  const handleMessage = () => {
+    if (!profileUser || isMessagingRef.current) {
+      return
+    }
+
+    isMessagingRef.current = true
+    getOrCreateDirectChat.mutate(profileUser.id, {
+      onSuccess: (chat) => {
+        navigate(`/messages/${chat.id}`)
+      },
+      onSettled: () => { isMessagingRef.current = false },
+    })
+  }
+
   return (
     <div className="w-full max-w-2xl border-x">
       <header className="sticky top-0 flex items-center gap-4 border-b bg-background px-4 py-3">
@@ -135,6 +153,8 @@ function Profile() {
             onEditProfile={() => setIsEditProfileOpen(true)}
             onShowFollowers={() => setFollowListTab('followers')}
             onShowFollowing={() => setFollowListTab('following')}
+            onMessage={handleMessage}
+            isMessagePending={getOrCreateDirectChat.isPending}
           />
 
           {isOwnProfile && (

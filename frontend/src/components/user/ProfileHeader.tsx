@@ -13,6 +13,8 @@ interface ProfileHeaderProps {
   onEditProfile?: () => void
   onShowFollowers?: () => void
   onShowFollowing?: () => void
+  onMessage?: () => void
+  isMessagePending?: boolean
 }
 
 function ProfileHeader({
@@ -24,6 +26,8 @@ function ProfileHeader({
   onEditProfile = () => {},
   onShowFollowers = () => {},
   onShowFollowing = () => {},
+  onMessage = () => {},
+  isMessagePending = false,
 }: ProfileHeaderProps) {
   return (
     <div>
@@ -47,14 +51,19 @@ function ProfileHeader({
             Edit Profile
           </Button>
         ) : (
-          <Button
-            variant={isFollowing ? 'outline' : 'default'}
-            className="rounded-full"
-            onClick={onToggleFollow}
-            disabled={isFollowPending}
-          >
-            {isFollowPending ? '처리 중...' : isFollowing ? 'Following' : 'Follow'}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" className="rounded-full" onClick={onMessage} disabled={isMessagePending}>
+              Message
+            </Button>
+            <Button
+              variant={isFollowing ? 'outline' : 'default'}
+              className="rounded-full"
+              onClick={onToggleFollow}
+              disabled={isFollowPending}
+            >
+              {isFollowPending ? '처리 중...' : isFollowing ? 'Following' : 'Follow'}
+            </Button>
+          </div>
         )}
       </div>
 

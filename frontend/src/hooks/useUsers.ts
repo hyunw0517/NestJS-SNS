@@ -1,6 +1,14 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { uploadImage } from '@/api/common'
-import { followUser, getFollowers, getFollowing, getUserProfile, unfollowUser, updateMe } from '@/api/users'
+import {
+  followUser,
+  getFollowers,
+  getFollowing,
+  getUserProfile,
+  searchUsers,
+  unfollowUser,
+  updateMe,
+} from '@/api/users'
 import { useAuth } from '@/context/useAuth'
 import type { PatchUserRequest } from '@/types/user'
 
@@ -15,6 +23,15 @@ export function useUserProfileQuery(userId: number) {
 
 // Followers/Following 다이얼로그용. 탭이 다르면(followers/following) 쿼리도 별개이므로
 // 지금 열려있는 탭만 활성화한다(Profile Posts/Media/Replies 탭과 동일한 패턴).
+// 그룹 채팅 생성/초대 대상 선택용. 입력한 검색어(디바운스는 호출부에서 처리)로
+// nickname/handle을 검색한다. 빈 문자열이면 Backend가 최근 사용자 일부를 내려준다.
+export function useUserSearchQuery(query: string) {
+  return useQuery({
+    queryKey: ['userSearch', query],
+    queryFn: () => searchUsers(query),
+  })
+}
+
 export function useFollowersInfiniteQuery(userId: number, options: { enabled?: boolean } = {}) {
   return useInfiniteQuery({
     queryKey: ['followers', userId],

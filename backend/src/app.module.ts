@@ -17,6 +17,7 @@ import { ImageModel } from './common/entity/image.entity';
 import { LogMiddleware } from './common/middleware/log.middleware';
 import { ChatsModule } from './chats/chats.module';
 import { ChatsModel } from './chats/entity/chats.entity';
+import { ChatMembersModel } from './chats/entity/chat-members.entity';
 import { MessagesModel } from './chats/messages/entity/messages.entity';
 import { CommentsModule } from './posts/comments/comments.module';
 import { CommentsModel } from './posts/comments/entity/comments.entity';
@@ -53,6 +54,7 @@ import { CommentLikeModel } from './posts/comments/entity/comment-likes.entity';
         UsersModel,
         ImageModel,
         ChatsModel,
+        ChatMembersModel,
         MessagesModel,
         CommentsModel,
         UserFollowsModel,

@@ -1,4 +1,4 @@
-import { Compass, Home, LogOut, Mail, PenLine, User } from 'lucide-react'
+import { Home, LogOut, Mail, PenLine, User } from 'lucide-react'
 import { useRef } from 'react'
 import { NavLink } from 'react-router-dom'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/useAuth'
 import { cn } from '@/lib/utils'
 
+// Explore는 실제 라우트/기능이 없어(이번 단계 범위 밖) 메뉴에서 제거했다 - App.tsx에
+// 대응하는 <Route>가 없는 죽은 링크로 남겨두지 않는다.
 const navItems = [
   { to: '/', label: 'Home', icon: Home, end: true },
-  { to: '/explore', label: 'Explore', icon: Compass },
   { to: '/messages', label: 'Messages', icon: Mail },
   { to: '/profile', label: 'Profile', icon: User },
 ]
@@ -57,9 +58,13 @@ function LeftSidebar() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Button className="aspect-square w-full rounded-full p-0 lg:aspect-auto lg:px-4">
-          <PenLine className="size-5 lg:hidden" />
-          <span className="hidden lg:inline">Post</span>
+        {/* 글 작성 폼은 Home 화면에만 있다(PostComposer) - 전역 작성 모달은 이번 단계
+            범위 밖이라, 아무 동작 없는 버튼 대신 Home으로 이동하는 실제 링크로 둔다. */}
+        <Button asChild className="aspect-square w-full rounded-full p-0 lg:aspect-auto lg:px-4">
+          <NavLink to="/">
+            <PenLine className="size-5 lg:hidden" />
+            <span className="hidden lg:inline">Post</span>
+          </NavLink>
         </Button>
 
         {user && (

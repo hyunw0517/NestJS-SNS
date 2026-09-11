@@ -17,7 +17,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/profile/:id?" element={<Profile />} />
           <Route path="/posts/:id" element={<PostDetail />} />
-          <Route path="/messages" element={<Messages />} />
+          <Route path="/messages/:chatId?" element={<Messages />} />
         </Route>
       </Route>
 

@@ -14,7 +14,7 @@ export interface Comment {
 
 // 아래는 GET /posts/:postId/comments(cursor pagination) 응답 그대로의 형태.
 // Backend가 목록 조회 시 author를 { id, nickname }만 select하므로(handle/profileImage 없음),
-// 위 mock용 Comment/PostAuthor와 형태가 달라 하나로 합치지 않고 분리한다.
+// 위 UI용 Comment/PostAuthor와 형태가 달라 하나로 합치지 않고 분리한다.
 export interface ApiCommentAuthor {
   id: number
   nickname: string

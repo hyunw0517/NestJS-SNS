@@ -20,7 +20,7 @@ export interface Post {
 }
 
 // 아래는 GET /posts(cursor pagination) 응답 그대로의 형태.
-// mock UI가 쓰는 위 Post/PostAuthor와 필드 구성이 달라(author가 전체 UsersModel,
+// PostCard 등 UI 컴포넌트가 쓰는 위 Post/PostAuthor와 필드 구성이 달라(author가 전체 UsersModel,
 // images가 문자열 배열이 아니라 객체 배열, repostCount 없음 등) 하나로 합치지 않고 분리한다.
 
 // GET /posts의 author는 GET /users/me와 동일하게 UsersModel을 그대로 직렬화한

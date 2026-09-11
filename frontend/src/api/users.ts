@@ -1,6 +1,6 @@
 import { apiClient } from '@/lib/apiClient'
 import type { CursorPaginationResult } from '@/types/pagination'
-import type { ApiFollowUser, ApiUserProfile, CurrentUser, PatchUserRequest } from '@/types/user'
+import type { ApiFollowUser, ApiUserProfile, ApiUserSearchResult, CurrentUser, PatchUserRequest } from '@/types/user'
 
 interface GetFollowListParams {
   take?: number
@@ -70,6 +70,15 @@ export async function getFollowers(userId: number, params: GetFollowListParams =
 export async function getFollowing(userId: number, params: GetFollowListParams = {}) {
   const { data } = await apiClient.get<CursorPaginationResult<ApiFollowUser>>(`/users/${userId}/following`, {
     params: buildFollowListQuery(params),
+  })
+
+  return data
+}
+
+// 그룹 채팅 생성/초대 대상 선택용. q가 비어있으면 Backend가 최근 사용자 일부를 보여준다.
+export async function searchUsers(q: string) {
+  const { data } = await apiClient.get<ApiUserSearchResult[]>('/users/search', {
+    params: q ? { q } : {},
   })
 
   return data
