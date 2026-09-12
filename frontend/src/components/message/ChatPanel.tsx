@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Users } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import GroupMembersDialog from '@/components/message/GroupMembersDialog'
@@ -20,6 +21,7 @@ interface ChatPanelProps {
 // 인스턴스로 mount된다 - 아래의 스크롤/최초진입 관련 ref들이 전환 때마다 자연스럽게
 // 초기화되어, chatId 변경을 별도로 감지해 리셋하는 로직이 필요 없다.
 function ChatPanel({ chatId, conversation, currentUserId, onBack, onSendMessage, onLeaveChatRoom }: ChatPanelProps) {
+  const navigate = useNavigate()
   const { type, name, otherUser, memberCount } = conversation
   const isGroup = type === 'GROUP'
   const displayName = isGroup ? (name ?? '그룹') : (otherUser?.nickname ?? '알 수 없음')
@@ -151,10 +153,18 @@ function ChatPanel({ chatId, conversation, currentUserId, onBack, onSendMessage,
           <ArrowLeft className="size-5" />
         </button>
 
-        <Avatar>
-          {!isGroup && <AvatarImage src={otherUser?.profileImage ?? undefined} alt={displayName} />}
-          <AvatarFallback>{displayName.slice(0, 1)}</AvatarFallback>
-        </Avatar>
+        {!isGroup && otherUser ? (
+          <button type="button" onClick={() => navigate(`/profile/${otherUser.id}`)} className="shrink-0 cursor-pointer">
+            <Avatar>
+              <AvatarImage src={otherUser.profileImage ?? undefined} alt={displayName} />
+              <AvatarFallback>{displayName.slice(0, 1)}</AvatarFallback>
+            </Avatar>
+          </button>
+        ) : (
+          <Avatar>
+            <AvatarFallback>{displayName.slice(0, 1)}</AvatarFallback>
+          </Avatar>
+        )}
 
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-semibold">{displayName}</div>

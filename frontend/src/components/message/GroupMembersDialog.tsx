@@ -82,10 +82,19 @@ function GroupMembersDialog({ open, onOpenChange, chatId, currentUserId, onLeave
 
           {members.map((member) => (
             <div key={member.id} data-member-id={member.id} className="flex items-center gap-3 px-5 py-2.5">
-              <Avatar size="sm">
-                <AvatarImage src={member.profileImage ?? undefined} alt={member.nickname} />
-                <AvatarFallback>{member.nickname.slice(0, 1)}</AvatarFallback>
-              </Avatar>
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenChange(false)
+                  navigate(`/profile/${member.id}`)
+                }}
+                className="shrink-0 cursor-pointer"
+              >
+                <Avatar size="sm">
+                  <AvatarImage src={member.profileImage ?? undefined} alt={member.nickname} />
+                  <AvatarFallback>{member.nickname.slice(0, 1)}</AvatarFallback>
+                </Avatar>
+              </button>
 
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium">{member.nickname}</div>

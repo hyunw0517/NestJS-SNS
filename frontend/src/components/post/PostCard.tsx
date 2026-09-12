@@ -181,8 +181,8 @@ function PostCard({ post, enableActions = false, isEditing = false, onStartEdit 
   }
 
   return (
-    <article className="flex gap-3 border-b px-4 py-3">
-      <button type="button" onClick={() => navigate(`/profile/${author.id}`)} className="shrink-0">
+    <article className="flex items-start gap-3 border-b px-4 py-3">
+      <button type="button" onClick={() => navigate(`/profile/${author.id}`)} className="shrink-0 cursor-pointer">
         <Avatar>
           <AvatarImage src={author.profileImage} alt={author.nickname} />
           <AvatarFallback>{author.nickname.slice(0, 1)}</AvatarFallback>
