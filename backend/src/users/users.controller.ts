@@ -17,7 +17,7 @@ export class UsersController {
     
   }
 
-  //! 회원가입은 auth.module(POST /auth/register/email)로 대체되어 여기엔 없다.
+  //! 회원가입은 auth.module(POST /auth/register/email)로 대체
 
   //* GET /users/me -> 현재 로그인한 사용자 조회
   @Get('me')

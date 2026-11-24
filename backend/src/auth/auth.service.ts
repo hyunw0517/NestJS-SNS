@@ -69,14 +69,14 @@ export class AuthService {
     decodeBasicToken(base64String: string){
         const decoded = Buffer.from(base64String, 'base64').toString('utf8'); // base64를 utf8로 디코딩
 
-        const split = decoded.split(':'); 
+        const idx = decoded.indexOf(':');
 
-        if( split.length !== 2 ){
+        if( idx <= 0 ){
             throw new UnauthorizedException('잘못된 유형의 토큰입니다.');
         }
 
-        const email = split[0]; 
-        const password = split[1]; 
+        const empNo = decoded.slice(0, idx); 
+        const password = decoded.slice(idx + 1); 
 
         return {
             email, 
@@ -91,14 +91,13 @@ export class AuthService {
                 secret: this.configService.get<string>(ENV_JWT_SECRET), 
             });
         }catch(e){
-            throw new UnauthorizedException('토큰이 만료되었습니다.');
+            throw new UnauthorizedException('유효하지 않거나 만료된 토큰입니다.');
         }
     }
 
     rotateToken(token: string, isRefreshToken: boolean){
-        const decoded = this.jwtService.verify(token, {
-            secret: this.configService.get<string>(ENV_JWT_SECRET), 
-        });
+        
+        const decoded = this.verifyToken(token);
 
         // sub: id, 
         // email: email, 

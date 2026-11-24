@@ -44,6 +44,11 @@ export const TEMP_FOLDER_PATH = join(
     TEMP_FOLDER_NAME,
 )
 
+// temp 폴더 업로드 파일명 형식. common.module의 multer가 항상 `${uuid()}${ext}`로 저장하므로
+// 클라이언트가 보낸 파일명은 이 형식이어야 한다. '../../.env' 같은 값으로 temp 밖의 파일을
+// public 폴더로 옮겨 노출시키는 경로 탐색을 막기 위해 temp 파일을 꺼내기 전에 반드시 검사한다.
+export const TEMP_FILE_NAME_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|jpeg|png)$/i;
+
 // 사용자 프로필/커버 이미지를 저장할 폴더
 // {프로젝트의 실제 경로}/public/users
 export const USERS_IMAGE_PATH = join(

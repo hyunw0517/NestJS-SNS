@@ -6,7 +6,7 @@ import { UserFollowsModel } from './entity/user-followers.entity';
 import { QueryRunner } from 'typeorm';
 import { basename, join, posix } from 'path';
 import { promises } from 'fs';
-import { TEMP_FOLDER_PATH, USERS_IMAGE_PATH, USERS_PUBLIC_IMAGE_PATH } from 'src/common/const/path.const';
+import { TEMP_FILE_NAME_REGEX, TEMP_FOLDER_PATH, USERS_IMAGE_PATH, USERS_PUBLIC_IMAGE_PATH } from 'src/common/const/path.const';
 import { PatchUserDto } from './dto/patch-user.dto';
 import { BasePaginationDto } from 'src/common/dto/base-pagination.dto';
 
@@ -143,6 +143,11 @@ export class UsersService {
     // temp 폴더에 업로드된 파일을 public/users로 옮기고, 저장할 URL path를 반환한다.
     // PostsImagesService.createPostImage와 동일한 패턴(temp -> 실제 폴더 rename).
     private async moveTempImageToUsersFolder(fileName: string): Promise<string> {
+        // 경로 탐색 방지: temp에 업로드된 uuid 파일명만 허용
+        if( !TEMP_FILE_NAME_REGEX.test(fileName) ){
+            throw new BadRequestException('잘못된 파일명입니다.');
+        }
+
         const tempFilePath = join(TEMP_FOLDER_PATH, fileName);
 
         try{

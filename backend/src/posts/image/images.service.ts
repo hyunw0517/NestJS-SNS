@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { basename, join } from "path";
-import { POST_IMAGE_PATH, TEMP_FOLDER_PATH } from "src/common/const/path.const";
+import { POST_IMAGE_PATH, TEMP_FILE_NAME_REGEX, TEMP_FOLDER_PATH } from "src/common/const/path.const";
 import { ImageModel, ImageModelType } from "src/common/entity/image.entity";
 import { QueryRunner, Repository } from "typeorm";
 import { CreatePostImageDto } from "./dto/create-image.dto";
@@ -28,6 +28,11 @@ export class PostsImagesService{
 
         if( !dto.path ){
             throw new BadRequestException( "이미지가 없습니다." );
+        }
+
+        // 경로 탐색 방지: temp에 업로드된 uuid 파일명만 허용
+        if( !TEMP_FILE_NAME_REGEX.test(dto.path) ){
+            throw new BadRequestException( "잘못된 파일명입니다." );
         }
 
         const repository = this.getRepository(qr);
